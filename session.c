@@ -70,7 +70,7 @@ SRD_API int srd_session_new(struct srd_session **sess)
 	/* Keep a list of all sessions, so we can clean up as needed. */
 	sessions = g_slist_append(sessions, *sess);
 
-	srd_dbg("Creating session %d.", (*sess)->session_id);
+	srd_dbg("Created session %d.", (*sess)->session_id);
 
 	return SRD_OK;
 }
@@ -96,9 +96,9 @@ SRD_API int srd_session_start(struct srd_session *sess)
 	if (!sess)
 		return SRD_ERR_ARG;
 
-	srd_dbg("Calling start() of all instances in session %d.", sess->session_id);
+	srd_dbg("Calling start() on all instances in session %d.", sess->session_id);
 
-	/* Run the start() method of all decoders receiving frontend data. */
+	/* Run the start() method on all decoders receiving frontend data. */
 	ret = SRD_OK;
 	for (d = sess->di_list; d; d = d->next) {
 		di = d->data;
@@ -279,32 +279,6 @@ SRD_API int srd_session_send(struct srd_session *sess,
 }
 
 /**
- * Communicate the end of the stream of sample data to the session.
- *
- * @param[in] sess The session. Must not be NULL.
- *
- * @return SRD_OK upon success. A (negative) error code otherwise.
- *
- * @since 0.6.0
- */
-SRD_API int srd_session_send_eof(struct srd_session *sess)
-{
-	GSList *d;
-	int ret;
-
-	if (!sess)
-		return SRD_ERR_ARG;
-
-	for (d = sess->di_list; d; d = d->next) {
-		ret = srd_inst_send_eof(d->data);
-		if (ret != SRD_OK)
-			return ret;
-	}
-
-	return SRD_OK;
-}
-
-/**
  * Terminate currently executing decoders in a session, reset internal state.
  *
  * All decoder instances have their .wait() method terminated, which
@@ -398,8 +372,7 @@ SRD_API int srd_pd_output_callback_add(struct srd_session *sess,
 	if (!sess)
 		return SRD_ERR_ARG;
 
-	srd_dbg("Registering new callback for output type %s.",
-		output_type_name(output_type));
+	srd_dbg("Registering new callback for output type %d.", output_type);
 
 	pd_cb = g_malloc(sizeof(struct srd_pd_callback));
 	pd_cb->output_type = output_type;
