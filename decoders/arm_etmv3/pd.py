@@ -31,30 +31,30 @@ exc_names = [
 for i in range(8, 496):
     exc_names.append('IRQ%d' % i)
 
-def parse_varint(bytes_):
+def parse_varint(bytes):
     '''Parse an integer where the top bit is the continuation bit.
     Returns value and number of parsed bytes.'''
     v = 0
-    for i, b in enumerate(bytes_):
+    for i, b in enumerate(bytes):
         v |= (b & 0x7F) << (i * 7)
         if b & 0x80 == 0:
             return v, i+1
-    return v, len(bytes_)
+    return v, len(bytes)
 
-def parse_uint(bytes_):
+def parse_uint(bytes):
     '''Parse little-endian integer.'''
     v = 0
-    for i, b in enumerate(bytes_):
+    for i, b in enumerate(bytes):
         v |= b << (i * 8)
     return v
 
-def parse_exc_info(bytes_):
+def parse_exc_info(bytes):
     '''Parse exception information bytes from a branch packet.'''
-    if len(bytes_) < 1:
+    if len(bytes) < 1:
         return None
 
-    excv, exclen = parse_varint(bytes_)
-    if bytes_[exclen - 1] & 0x80 != 0x00:
+    excv, exclen = parse_varint(bytes)
+    if bytes[exclen - 1] & 0x80 != 0x00:
         return None # Exception info not complete.
 
     if exclen == 2 and excv & (1 << 13):
@@ -69,21 +69,21 @@ def parse_exc_info(bytes_):
     resume = (excv >> 14) & 0x0F
     return (ns, exc, cancel, altisa, hyp, resume)
 
-def parse_branch_addr(bytes_, ref_addr, cpu_state, branch_enc):
+def parse_branch_addr(bytes, ref_addr, cpu_state, branch_enc):
     '''Parse encoded branch address.
        Returns addr, addrlen, cpu_state, exc_info.
        Returns None if packet is not yet complete'''
 
-    addr, addrlen = parse_varint(bytes_)
+    addr, addrlen = parse_varint(bytes)
 
-    if bytes_[addrlen - 1] & 0x80 != 0x00:
+    if bytes[addrlen-1] & 0x80 != 0x00:
         return None # Branch address not complete.
 
     addr_bits = 7 * addrlen
 
     have_exc_info = False
     if branch_enc == 'original':
-        if addrlen == 5 and bytes_[4] & 0x40:
+        if addrlen == 5 and bytes[4] & 0x40:
             have_exc_info = True
     elif branch_enc == 'alternative':
         addr_bits -= 1 # Top bit of address indicates exc_info.
@@ -93,20 +93,20 @@ def parse_branch_addr(bytes_, ref_addr, cpu_state, branch_enc):
 
     exc_info = None
     if have_exc_info:
-        exc_info = parse_exc_info(bytes_[addrlen:])
+        exc_info = parse_exc_info(bytes[addrlen:])
         if exc_info is None:
             return None # Exception info not complete.
 
     if addrlen == 5:
         # Possible change in CPU state.
-        if bytes_[4] & 0xB8 == 0x08:
+        if bytes[4] & 0xB8 == 0x08:
             cpu_state = 'arm'
-        elif bytes_[4] & 0xB0 == 0x10:
+        elif bytes[4] & 0xB0 == 0x10:
             cpu_state = 'thumb'
-        elif bytes_[4] & 0xA0 == 0x20:
+        elif bytes[4] & 0xA0 == 0x20:
             cpu_state = 'jazelle'
         else:
-            raise NotImplementedError('Unhandled branch byte 4: 0x%02x' % bytes_[4])
+            raise NotImplementedError('Unhandled branch byte 4: 0x%02x' % bytes[4])
 
     # Shift the address according to current CPU state.
     if cpu_state == 'arm':
@@ -130,34 +130,33 @@ class Decoder(srd.Decoder):
     api_version = 3
     id = 'arm_etmv3'
     name = 'ARM ETMv3'
-    longname = 'ARM Embedded Trace Macroblock v3'
-    desc = 'ARM ETM v3 instruction trace protocol.'
+    longname = 'ARM Embedded Trace Macroblock'
+    desc = 'Decode ETM instruction trace packets.'
     license = 'gplv2+'
     inputs = ['uart']
-    outputs = []
-    tags = ['Debug/trace']
+    outputs = ['arm_etmv3']
     annotations = (
         ('trace', 'Trace info'),
-        ('branch', 'Branch'),
-        ('exception', 'Exception'),
+        ('branch', 'Branches'),
+        ('exception', 'Exceptions'),
         ('execution', 'Instruction execution'),
         ('data', 'Data access'),
         ('pc', 'Program counter'),
-        ('instr_e', 'Executed instruction'),
-        ('instr_n', 'Not executed instruction'),
+        ('instr_e', 'Executed instructions'),
+        ('instr_n', 'Not executed instructions'),
         ('source', 'Source code'),
         ('location', 'Current location'),
         ('function', 'Current function'),
     )
     annotation_rows = (
-        ('traces', 'Trace info', (0,)),
+        ('trace', 'Trace info', (0,)),
         ('flow', 'Code flow', (1, 2, 3,)),
-        ('data-vals', 'Data access', (4,)),
-        ('pc-vals', 'Program counters', (5,)),
-        ('instructions', 'Instructions', (6, 7,)),
-        ('sources', 'Source code', (8,)),
-        ('locations', 'Current locations', (9,)),
-        ('functions', 'Current functions', (10,)),
+        ('data', 'Data access', (4,)),
+        ('pc', 'Program counter', (5,)),
+        ('instruction', 'Instructions', (6, 7,)),
+        ('source', 'Source code', (8,)),
+        ('location', 'Current location', (9,)),
+        ('function', 'Current function', (10,)),
     )
     options = (
         {'id': 'objdump', 'desc': 'objdump path',
@@ -212,10 +211,10 @@ class Decoder(srd.Decoder):
 
         disasm = disasm.decode('utf-8', 'replace')
 
-        instpat = re.compile(r'\s*([0-9a-fA-F]+):\t+([0-9a-fA-F ]+)\t+([a-zA-Z][^;]+)\s*;?.*')
-        branchpat = re.compile(r'(b|bl|b..|bl..|cbnz|cbz)(?:\.[wn])?\s+(?:r[0-9]+,\s*)?([0-9a-fA-F]+)')
-        filepat = re.compile(r'[^\s]+[/\\\\]([a-zA-Z0-9._-]+:[0-9]+)(?:\s.*)?')
-        funcpat = re.compile(r'[0-9a-fA-F]+\s*<([^>]+)>:.*')
+        instpat = re.compile('\s*([0-9a-fA-F]+):\t+([0-9a-fA-F ]+)\t+([a-zA-Z][^;]+)\s*;?.*')
+        branchpat = re.compile('(b|bl|b..|bl..|cbnz|cbz)(?:\.[wn])?\s+(?:r[0-9]+,\s*)?([0-9a-fA-F]+)')
+        filepat = re.compile('[^\s]+[/\\\\]([a-zA-Z0-9._-]+:[0-9]+)(?:\s.*)?')
+        funcpat = re.compile('[0-9a-fA-F]+\s*<([^>]+)>:.*')
 
         prev_src = ''
         prev_file = ''

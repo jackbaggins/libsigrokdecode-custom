@@ -42,20 +42,19 @@ class Decoder(srd.Decoder):
     api_version = 3
     id = 'adns5020'
     name = 'ADNS-5020'
-    longname = 'Avago ADNS-5020'
-    desc = 'Bidirectional optical mouse sensor protocol.'
+    longname = 'Avago ADNS-5020 optical mouse sensor'
+    desc = 'Bidirectional command and data over an SPI-like protocol.'
     license = 'gplv2+'
     inputs = ['spi']
-    outputs = []
-    tags = ['IC', 'PC', 'Sensor']
+    outputs = ['adns5020']
     annotations = (
-        ('read', 'Register read'),
-        ('write', 'Register write'),
-        ('warning', 'Warning'),
+        ('read', 'Register read commands'),
+        ('write', 'Register write commands'),
+        ('warning', 'Warnings'),
     )
     annotation_rows = (
-        ('reads', 'Reads', (0,)),
-        ('writes', 'Writes', (1,)),
+        ('read', 'Read', (0,)),
+        ('write', 'Write', (1,)),
         ('warnings', 'Warnings', (2,)),
     )
 

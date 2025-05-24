@@ -120,8 +120,7 @@ class Decoder(srd.Decoder):
     desc = 'Demodulated morse code protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Encoding']
+    outputs = ['morse']
     channels = (
         {'id': 'data', 'name': 'Data', 'desc': 'Data line'},
     )
@@ -130,12 +129,12 @@ class Decoder(srd.Decoder):
     )
     annotations = (
         ('time', 'Time'),
-        ('unit', 'Unit'),
+        ('units', 'Units'),
         ('symbol', 'Symbol'),
         ('letter', 'Letter'),
         ('word', 'Word'),
     )
-    annotation_rows = tuple((u + 's', v + 's', (i,)) for i, (u, v) in enumerate(annotations))
+    annotation_rows = tuple((u, v, (i,)) for i, (u, v) in enumerate(annotations))
 
     def __init__(self):
         self.reset()

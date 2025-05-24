@@ -64,14 +64,13 @@ class Decoder(srd.Decoder):
     api_version = 3
     id = 'ds243x'
     name = 'DS243x'
-    longname = 'Maxim DS2432/3'
+    longname = 'Maxim DS2432/2433'
     desc = 'Maxim DS243x series 1-Wire EEPROM protocol.'
     license = 'gplv2+'
     inputs = ['onewire_network']
-    outputs = []
-    tags = ['IC', 'Memory']
+    outputs = ['ds243x']
     annotations = (
-        ('text', 'Text'),
+        ('text', 'Human-readable text'),
     )
     binary = (
         ('mem_read', 'Data read from memory'),
@@ -111,7 +110,7 @@ class Decoder(srd.Decoder):
                 self.family, self.commands = family_codes[val & 0xff]
                 s = 'is 0x%02x, %s detected' % (self.family_code, self.family)
             else:
-                s = '0x%02x unknown' % (self.family_code)
+                s = '%x%02x unknown' % (self.family_code)
 
             self.putx([0, ['ROM: 0x%016x (%s)' % (val, 'family code ' + s),
                            'ROM: 0x%016x (%s)' % (val, self.family)]])

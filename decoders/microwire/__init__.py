@@ -19,7 +19,6 @@
 
 '''
 Microwire is a 3-wire half-duplex synchronous serial communication protocol.
-
 Originally from National Semiconductor, it is often used in EEPROM chips with
 device specific commands on top of the bit stream.
 

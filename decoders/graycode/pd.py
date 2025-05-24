@@ -77,11 +77,10 @@ class Decoder(srd.Decoder):
     id = 'graycode'
     name = 'Gray code'
     longname = 'Gray code and rotary encoder'
-    desc = 'Accumulate rotary encoder increments, provide statistics.'
+    desc = 'Accumulate rotary encoder increments, provide timing statistics.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Encoding']
+    outputs = ['graycode']
     optional_channels = tuple(
         {'id': 'd{}'.format(i), 'name': 'D{}'.format(i), 'desc': 'Data line {}'.format(i)}
         for i in range(MAX_CHANNELS)
@@ -94,12 +93,12 @@ class Decoder(srd.Decoder):
         ('phase', 'Phase'),
         ('increment', 'Increment'),
         ('count', 'Count'),
-        ('turn', 'Turn'),
+        ('turns', 'Turns'),
         ('interval', 'Interval'),
         ('average', 'Average'),
         ('rpm', 'Rate'),
     )
-    annotation_rows = tuple((u + 's', v + 's', (i,)) for i, (u, v) in enumerate(annotations))
+    annotation_rows = tuple((u, v, (i,)) for i, (u, v) in enumerate(annotations))
 
     def __init__(self):
         self.reset()

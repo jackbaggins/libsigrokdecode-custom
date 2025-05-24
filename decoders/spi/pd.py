@@ -82,7 +82,6 @@ class Decoder(srd.Decoder):
     license = 'gplv2+'
     inputs = ['logic']
     outputs = ['spi']
-    tags = ['Embedded/industrial']
     channels = (
         {'id': 'clk', 'name': 'CLK', 'desc': 'Clock'},
     )
@@ -105,19 +104,15 @@ class Decoder(srd.Decoder):
     annotations = (
         ('miso-data', 'MISO data'),
         ('mosi-data', 'MOSI data'),
-        ('miso-bit', 'MISO bit'),
-        ('mosi-bit', 'MOSI bit'),
-        ('warning', 'Warning'),
-        ('miso-transfer', 'MISO transfer'),
-        ('mosi-transfer', 'MOSI transfer'),
+        ('miso-bits', 'MISO bits'),
+        ('mosi-bits', 'MOSI bits'),
+        ('warnings', 'Human-readable warnings'),
     )
     annotation_rows = (
+        ('miso-data', 'MISO data', (0,)),
         ('miso-bits', 'MISO bits', (2,)),
-        ('miso-data-vals', 'MISO data', (0,)),
-        ('miso-transfers', 'MISO transfers', (5,)),
+        ('mosi-data', 'MOSI data', (1,)),
         ('mosi-bits', 'MOSI bits', (3,)),
-        ('mosi-data-vals', 'MOSI data', (1,)),
-        ('mosi-transfers', 'MOSI transfers', (6,)),
         ('other', 'Other', (4,)),
     )
     binary = (
@@ -137,6 +132,7 @@ class Decoder(srd.Decoder):
         self.misobytes = []
         self.mosibytes = []
         self.ss_block = -1
+        self.samplenum = -1
         self.ss_transfer = -1
         self.cs_was_deasserted = False
         self.have_cs = self.have_miso = self.have_mosi = None
@@ -278,13 +274,7 @@ class Decoder(srd.Decoder):
                 self.ss_transfer = self.samplenum
                 self.misobytes = []
                 self.mosibytes = []
-            elif self.ss_transfer != -1:
-                if self.have_miso:
-                    self.put(self.ss_transfer, self.samplenum, self.out_ann,
-                        [5, [' '.join(format(x.val, '02X') for x in self.misobytes)]])
-                if self.have_mosi:
-                    self.put(self.ss_transfer, self.samplenum, self.out_ann,
-                        [6, [' '.join(format(x.val, '02X') for x in self.mosibytes)]])
+            else:
                 self.put(self.ss_transfer, self.samplenum, self.out_python,
                     ['TRANSFER', self.mosibytes, self.misobytes])
 

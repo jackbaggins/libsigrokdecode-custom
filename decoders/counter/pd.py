@@ -27,11 +27,10 @@ class Decoder(srd.Decoder):
     id = 'counter'
     name = 'Counter'
     longname = 'Edge counter'
-    desc = 'Count the number of edges in a signal.'
+    desc = 'Count number of edges.'
     license = 'gplv2+'
     inputs = ['logic']
     outputs = []
-    tags = ['Util']
     channels = (
         {'id': 'data', 'name': 'Data', 'desc': 'Data line'},
     )
@@ -53,7 +52,7 @@ class Decoder(srd.Decoder):
             'values': ('any', 'rising', 'falling')},
         {'id': 'divider', 'desc': 'Count divider (word width)', 'default': 0},
         {'id': 'reset_edge', 'desc': 'Edge which clears counters (reset)',
-            'default': 'falling', 'values': ('any', 'rising', 'falling')},
+            'default': 'falling', 'values': ('rising', 'falling')},
         {'id': 'edge_off', 'desc': 'Edge counter value after start/reset', 'default': 0},
         {'id': 'word_off', 'desc': 'Word counter value after start/reset', 'default': 0},
         {'id': 'dead_cycles', 'desc': 'Ignore this many edges after reset', 'default': 0},

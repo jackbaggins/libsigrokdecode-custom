@@ -28,11 +28,10 @@ class Decoder(srd.Decoder):
     id = 'dali'
     name = 'DALI'
     longname = 'Digital Addressable Lighting Interface'
-    desc = 'Digital Addressable Lighting Interface (DALI) protocol.'
+    desc = 'DALI lighting control protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Embedded/industrial', 'Lighting']
+    outputs = ['dali']
     channels = (
         {'id': 'dali', 'name': 'DALI', 'desc': 'DALI data line'},
     )
@@ -42,7 +41,7 @@ class Decoder(srd.Decoder):
     )
     annotations = (
         ('bit', 'Bit'),
-        ('startbit', 'Start bit'),
+        ('startbit', 'Startbit'),
         ('sbit', 'Select bit'),
         ('ybit', 'Individual or group'),
         ('address', 'Address'),
@@ -52,7 +51,7 @@ class Decoder(srd.Decoder):
     )
     annotation_rows = (
         ('bits', 'Bits', (0,)),
-        ('raw-data', 'Raw data', (7,)),
+        ('raw', 'Raw data', (7,)),
         ('fields', 'Fields', (1, 2, 3, 4, 5, 6)),
     )
 
@@ -61,6 +60,7 @@ class Decoder(srd.Decoder):
 
     def reset(self):
         self.samplerate = None
+        self.samplenum = None
         self.edges, self.bits, self.ss_es_bits = [], [], []
         self.state = 'IDLE'
         self.dev_type = None

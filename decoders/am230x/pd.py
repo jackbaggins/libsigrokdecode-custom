@@ -36,13 +36,12 @@ class SamplerateError(Exception):
 class Decoder(srd.Decoder):
     api_version = 3
     id = 'am230x'
-    name = 'AM230x'
+    name = 'AM230x/DHTxx/RHTxx'
     longname = 'Aosong AM230x/DHTxx/RHTxx'
-    desc = 'Aosong AM230x/DHTxx/RHTxx humidity/temperature sensor.'
+    desc = 'Aosong AM230x/DHTxx/RHTxx humidity/temperature sensor protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['IC', 'Sensor']
+    outputs = ['am230x']
     channels = (
         {'id': 'sda', 'name': 'SDA', 'desc': 'Single wire serial data line'},
     )
@@ -56,8 +55,8 @@ class Decoder(srd.Decoder):
         ('bit', 'Bit'),
         ('end', 'End'),
         ('byte', 'Byte'),
-        ('humidity', 'Relative humidity'),
-        ('temperature', 'Temperature'),
+        ('humidity', 'Relative humidity in percent'),
+        ('temperature', 'Temperature in degrees Celsius'),
         ('checksum', 'Checksum'),
     )
     annotation_rows = (

@@ -18,9 +18,6 @@
 ##
 
 import sigrokdecode as srd
-from common.srdhelper import SrdIntEnum
-
-Pin = SrdIntEnum.from_str('Pin', 'CLK DATA LOAD LDAC')
 
 dacs = {
     0: 'DACA',
@@ -37,8 +34,7 @@ class Decoder(srd.Decoder):
     desc = 'Texas Instruments TLC5620 8-bit quad DAC.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['IC', 'Analog/digital']
+    outputs = ['tlc5620']
     channels = (
         {'id': 'clk', 'name': 'CLK', 'desc': 'Serial interface clock'},
         {'id': 'data', 'name': 'DATA', 'desc': 'Serial interface data'},
@@ -200,7 +196,7 @@ class Decoder(srd.Decoder):
             #   a) Falling edge on CLK, and/or
             #   b) Falling edge on LOAD, and/or
             #   b) Falling edge on LDAC
-            pins = self.wait([{Pin.CLK: 'f'}, {Pin.LOAD: 'f'}, {Pin.LDAC: 'f'}])
+            pins = self.wait([{0: 'f'}, {2: 'f'}, {3: 'f'}])
             self.ldac = pins[3]
 
             # Handle those conditions (one or more) that matched this time.

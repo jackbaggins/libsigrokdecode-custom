@@ -24,18 +24,13 @@ class Decoder(srd.Decoder):
     id = 'mlx90614'
     name = 'MLX90614'
     longname = 'Melexis MLX90614'
-    desc = 'Melexis MLX90614 infrared thermometer protocol.'
+    desc = 'Infrared Thermometer protocol.'
     license = 'gplv2+'
     inputs = ['i2c']
-    outputs = []
-    tags = ['IC', 'Sensor']
+    outputs = ['mlx90614']
     annotations = (
-        ('celsius', 'Temperature / °C'),
-        ('kelvin', 'Temperature / K'),
-    )
-    annotation_rows = (
-        ('temps-celsius', 'Temperature / °C', (0,)),
-        ('temps-kelvin', 'Temperature / K', (1,)),
+        ('celsius', 'Temperature in degrees Celsius'),
+        ('kelvin', 'Temperature in Kelvin'),
     )
 
     def __init__(self):

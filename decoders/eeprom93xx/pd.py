@@ -27,13 +27,10 @@ class Decoder(srd.Decoder):
     desc = '93xx series Microwire EEPROM protocol.'
     license = 'gplv2+'
     inputs = ['microwire']
-    outputs = []
-    tags = ['IC', 'Memory']
+    outputs = ['eeprom93xx']
     options = (
         {'id': 'addresssize', 'desc': 'Address size', 'default': 8},
         {'id': 'wordsize', 'desc': 'Word size', 'default': 16},
-        {'id': 'format', 'desc': 'Data format', 'default': 'hex',
-            'values': ('ascii', 'hex')},
     )
     annotations = (
         ('si-data', 'SI data'),
@@ -44,10 +41,6 @@ class Decoder(srd.Decoder):
         ('data', 'Data', (0, 1)),
         ('warnings', 'Warnings', (2,)),
     )
-    binary = (
-        ('address', 'Address'),
-        ('data', 'Data'),
-    )
 
     def __init__(self):
         self.reset()
@@ -57,7 +50,6 @@ class Decoder(srd.Decoder):
 
     def start(self):
         self.out_ann = self.register(srd.OUTPUT_ANN)
-        self.out_binary = self.register(srd.OUTPUT_BINARY)
         self.addresssize = self.options['addresssize']
         self.wordsize = self.options['wordsize']
 
@@ -67,8 +59,7 @@ class Decoder(srd.Decoder):
         for b in range(len(data)):
             a += (data[b].si << (len(data) - b - 1))
         self.put(data[0].ss, data[-1].es, self.out_ann,
-                 [0, ['Address: 0x%04x' % a, 'Addr: 0x%04x' % a, '0x%04x' % a]])
-        self.put(data[0].ss, data[-1].es, self.out_binary, [0, bytes([a])])
+                 [0, ['Address: 0x%x' % a, 'Addr: 0x%x' % a, '0x%x' % a]])
 
     def put_word(self, si, data):
         # Decode word (MSb first).
@@ -77,22 +68,8 @@ class Decoder(srd.Decoder):
             d = data[b].si if si else data[b].so
             word += (d << (len(data) - b - 1))
         idx = 0 if si else 1
-
-        if self.options['format'] == 'ascii':
-            word_str = ''
-            for s in range(0, len(data), 8):
-                c = 0xff & (word >> s)
-                if c in range(32, 126 + 1):
-                    word_str = chr(c) + word_str
-                else:
-                    word_str = '[{:02X}]'.format(c) + word_str
-            self.put(data[0].ss, data[-1].es,
-                     self.out_ann, [idx, ['Data: %s' % word_str, '%s' % word_str]])
-        else:
-            self.put(data[0].ss, data[-1].es,
-                     self.out_ann, [idx, ['Data: 0x%04x' % word, '0x%04x' % word]])
-            self.put(data[0].ss, data[-1].es, self.out_binary,
-                     [1, bytes([(word & 0xff00) >> 8, word & 0xff])])
+        self.put(data[0].ss, data[-1].es,
+                 self.out_ann, [idx, ['Data: 0x%x' % word, '0x%x' % word]])
 
     def decode(self, ss, es, data):
         if len(data) < (2 + self.addresssize):

@@ -14,7 +14,8 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program; if not, see <http://www.gnu.org/licenses/>.
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 ##
 
 import math
@@ -32,7 +33,6 @@ class Decoder(srd.Decoder):
     license = 'gplv2+'
     inputs = ['logic']
     outputs = []
-    tags = ['Debug/trace']
     options = (
         {'id': 'debug', 'desc': 'Debug', 'default': 'no', 'values': ('yes', 'no') },
     )
@@ -55,7 +55,7 @@ class Decoder(srd.Decoder):
         ('address', 'Address'),
         ('data-write', 'Data write'),
         ('data-read', 'Data read'),
-        ('debug-msg', 'Debug message'),
+        ('debug', 'Debug'),
     )
     annotation_rows = (
         ('bits', 'Bits', (0,)),

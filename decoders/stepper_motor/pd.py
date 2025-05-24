@@ -27,8 +27,7 @@ class Decoder(srd.Decoder):
     desc = 'Absolute position and movement speed from step/dir.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Embedded/industrial']
+    outputs = ['stepper_motor']
     channels = (
         {'id': 'step', 'name': 'Step', 'desc': 'Step pulse'},
         {'id': 'dir', 'name': 'Direction', 'desc': 'Direction select'},
@@ -43,8 +42,8 @@ class Decoder(srd.Decoder):
         ('position', 'Position')
     )
     annotation_rows = (
-        ('speeds', 'Speeds', (0,)),
-        ('positions', 'Positions', (1,)),
+        ('speed', 'Speed', (0,)),
+        ('position', 'Position', (1,)),
     )
 
     def __init__(self):

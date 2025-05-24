@@ -147,7 +147,7 @@ def reverse_number(num, count):
     out = list(count * '0')
     for i in range(0, count):
         if num >> i & 1:
-            out[i] = '1'
+            out[i] = '1';
     return int(''.join(out), 2)
 
 def calc_crc5(bitstr):
@@ -181,7 +181,6 @@ class Decoder(srd.Decoder):
     license = 'gplv2+'
     inputs = ['usb_signalling']
     outputs = ['usb_packet']
-    tags = ['PC']
     options = (
         {'id': 'signalling', 'desc': 'Signalling',
             'default': 'full-speed', 'values': ('full-speed', 'low-speed')},
@@ -341,10 +340,6 @@ class Decoder(srd.Decoder):
                 databytes.append(db)
                 self.packet_summary += ' %02X' % db
             self.packet_summary += ' ]'
-
-            if len(packet) < 32:
-                self.putp([28, ['Invalid packet (shorter than 32 bits)']])
-                return
 
             # Convenience Python output (no annotation) for all bytes together.
             self.ss, self.es = self.bits[16][1], self.bits[-16][2]

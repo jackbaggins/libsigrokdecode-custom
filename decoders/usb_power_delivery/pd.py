@@ -203,7 +203,6 @@ class Decoder(srd.Decoder):
     license = 'gplv2+'
     inputs = ['logic']
     outputs = ['usb_pd']
-    tags = ['PC']
     channels = (
         {'id': 'cc1', 'name': 'CC1', 'desc': 'Configuration Channel 1'},
     )
@@ -223,7 +222,7 @@ class Decoder(srd.Decoder):
         ('crc', 'Checksum'),
         ('eop', 'End Of Packet'),
         ('sym', '4b5b symbols'),
-        ('warning', 'Warning'),
+        ('warnings', 'Warnings'),
         ('src', 'Source Message'),
         ('snk', 'Sink Message'),
         ('payload', 'Payload'),
@@ -231,11 +230,11 @@ class Decoder(srd.Decoder):
     )
     annotation_rows = (
        ('4b5b', 'Symbols', (7,)),
-       ('parts', 'Parts', (1, 2, 3, 4, 5, 6)),
-       ('payloads', 'Payloads', (11,)),
-       ('types', 'Types', (0, 9, 10)),
+       ('phase', 'Parts', (1, 2, 3, 4, 5, 6)),
+       ('payload', 'Payload', (11,)),
+       ('type', 'Type', (0, 9, 10)),
        ('warnings', 'Warnings', (8,)),
-       ('texts', 'Full text', (12,)),
+       ('text', 'Full text', (12,)),
     )
     binary = (
         ('raw-data', 'RAW binary data'),
@@ -271,7 +270,7 @@ class Decoder(srd.Decoder):
         if pos in self.stored_pdos.keys():
             t_pdo = '#%d: %s' % (pos, self.stored_pdos[pos])
         else:
-            t_pdo = '#%d' % (pos)
+            t_pdo = '#d' % (pos)
 
         return '(PDO %s) %s%s' % (t_pdo, t_settings, t_flags)
 
@@ -418,10 +417,7 @@ class Decoder(srd.Decoder):
         return ((self.head >> 6) & 3) + 1
 
     def head_type(self):
-        if self.head_rev() == 3:
-            return self.head & 0x1F
-        else:
-            return self.head & 0xF
+        return self.head & 0xF
 
     def head_count(self):
         return (self.head >> 12) & 7

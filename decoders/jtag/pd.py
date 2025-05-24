@@ -1,7 +1,7 @@
 ##
 ## This file is part of the libsigrokdecode project.
 ##
-## Copyright (C) 2012-2020 Uwe Hermann <uwe@hermann-uwe.de>
+## Copyright (C) 2012-2015 Uwe Hermann <uwe@hermann-uwe.de>
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 ##
 
 import sigrokdecode as srd
-from common.srdhelper import SrdStrEnum
 
 '''
 OUTPUT_PYTHON format:
@@ -43,12 +42,16 @@ of '1' and '0' characters (the right-most character is the LSB. Example:
 for each bit that is in the bitstring.
 '''
 
-s = 'TEST-LOGIC-RESET RUN-TEST/IDLE \
-     SELECT-DR-SCAN CAPTURE-DR UPDATE-DR PAUSE-DR SHIFT-DR EXIT1-DR EXIT2-DR \
-     SELECT-IR-SCAN CAPTURE-IR UPDATE-IR PAUSE-IR SHIFT-IR EXIT1-IR EXIT2-IR'
-St = SrdStrEnum.from_str('St', s)
-
-jtag_states = [s.value for s in St]
+jtag_states = [
+        # Intro "tree"
+        'TEST-LOGIC-RESET', 'RUN-TEST/IDLE',
+        # DR "tree"
+        'SELECT-DR-SCAN', 'CAPTURE-DR', 'UPDATE-DR', 'PAUSE-DR',
+        'SHIFT-DR', 'EXIT1-DR', 'EXIT2-DR',
+        # IR "tree"
+        'SELECT-IR-SCAN', 'CAPTURE-IR', 'UPDATE-IR', 'PAUSE-IR',
+        'SHIFT-IR', 'EXIT1-IR', 'EXIT2-IR',
+]
 
 class Decoder(srd.Decoder):
     api_version = 3
@@ -59,7 +62,6 @@ class Decoder(srd.Decoder):
     license = 'gplv2+'
     inputs = ['logic']
     outputs = ['jtag']
-    tags = ['Debug/trace']
     channels = (
         {'id': 'tdi',  'name': 'TDI',  'desc': 'Test data input'},
         {'id': 'tdo',  'name': 'TDO',  'desc': 'Test data output'},
@@ -80,8 +82,8 @@ class Decoder(srd.Decoder):
     annotation_rows = (
         ('bits-tdi', 'Bits (TDI)', (16,)),
         ('bits-tdo', 'Bits (TDO)', (17,)),
-        ('bitstrings-tdi', 'Bitstrings (TDI)', (18,)),
-        ('bitstrings-tdo', 'Bitstrings (TDO)', (19,)),
+        ('bitstrings-tdi', 'Bitstring (TDI)', (18,)),
+        ('bitstrings-tdo', 'Bitstring (TDO)', (19,)),
         ('states', 'States', tuple(range(15 + 1))),
     )
 
@@ -89,8 +91,8 @@ class Decoder(srd.Decoder):
         self.reset()
 
     def reset(self):
-        # self.state = St.TEST_LOGIC_RESET
-        self.state = St.RUN_TEST_IDLE
+        # self.state = 'TEST-LOGIC-RESET'
+        self.state = 'RUN-TEST/IDLE'
         self.oldstate = None
         self.bits_tdi = []
         self.bits_tdo = []
@@ -122,42 +124,42 @@ class Decoder(srd.Decoder):
         self.oldstate = self.state
 
         # Intro "tree"
-        if self.state == St.TEST_LOGIC_RESET:
-            self.state = St.TEST_LOGIC_RESET if (tms) else St.RUN_TEST_IDLE
-        elif self.state == St.RUN_TEST_IDLE:
-            self.state = St.SELECT_DR_SCAN if (tms) else St.RUN_TEST_IDLE
+        if self.state == 'TEST-LOGIC-RESET':
+            self.state = 'TEST-LOGIC-RESET' if (tms) else 'RUN-TEST/IDLE'
+        elif self.state == 'RUN-TEST/IDLE':
+            self.state = 'SELECT-DR-SCAN' if (tms) else 'RUN-TEST/IDLE'
 
         # DR "tree"
-        elif self.state == St.SELECT_DR_SCAN:
-            self.state = St.SELECT_IR_SCAN if (tms) else St.CAPTURE_DR
-        elif self.state == St.CAPTURE_DR:
-            self.state = St.EXIT1_DR if (tms) else St.SHIFT_DR
-        elif self.state == St.SHIFT_DR:
-            self.state = St.EXIT1_DR if (tms) else St.SHIFT_DR
-        elif self.state == St.EXIT1_DR:
-            self.state = St.UPDATE_DR if (tms) else St.PAUSE_DR
-        elif self.state == St.PAUSE_DR:
-            self.state = St.EXIT2_DR if (tms) else St.PAUSE_DR
-        elif self.state == St.EXIT2_DR:
-            self.state = St.UPDATE_DR if (tms) else St.SHIFT_DR
-        elif self.state == St.UPDATE_DR:
-            self.state = St.SELECT_DR_SCAN if (tms) else St.RUN_TEST_IDLE
+        elif self.state == 'SELECT-DR-SCAN':
+            self.state = 'SELECT-IR-SCAN' if (tms) else 'CAPTURE-DR'
+        elif self.state == 'CAPTURE-DR':
+            self.state = 'EXIT1-DR' if (tms) else 'SHIFT-DR'
+        elif self.state == 'SHIFT-DR':
+            self.state = 'EXIT1-DR' if (tms) else 'SHIFT-DR'
+        elif self.state == 'EXIT1-DR':
+            self.state = 'UPDATE-DR' if (tms) else 'PAUSE-DR'
+        elif self.state == 'PAUSE-DR':
+            self.state = 'EXIT2-DR' if (tms) else 'PAUSE-DR'
+        elif self.state == 'EXIT2-DR':
+            self.state = 'UPDATE-DR' if (tms) else 'SHIFT-DR'
+        elif self.state == 'UPDATE-DR':
+            self.state = 'SELECT-DR-SCAN' if (tms) else 'RUN-TEST/IDLE'
 
         # IR "tree"
-        elif self.state == St.SELECT_IR_SCAN:
-            self.state = St.TEST_LOGIC_RESET if (tms) else St.CAPTURE_IR
-        elif self.state == St.CAPTURE_IR:
-            self.state = St.EXIT1_IR if (tms) else St.SHIFT_IR
-        elif self.state == St.SHIFT_IR:
-            self.state = St.EXIT1_IR if (tms) else St.SHIFT_IR
-        elif self.state == St.EXIT1_IR:
-            self.state = St.UPDATE_IR if (tms) else St.PAUSE_IR
-        elif self.state == St.PAUSE_IR:
-            self.state = St.EXIT2_IR if (tms) else St.PAUSE_IR
-        elif self.state == St.EXIT2_IR:
-            self.state = St.UPDATE_IR if (tms) else St.SHIFT_IR
-        elif self.state == St.UPDATE_IR:
-            self.state = St.SELECT_DR_SCAN if (tms) else St.RUN_TEST_IDLE
+        elif self.state == 'SELECT-IR-SCAN':
+            self.state = 'TEST-LOGIC-RESET' if (tms) else 'CAPTURE-IR'
+        elif self.state == 'CAPTURE-IR':
+            self.state = 'EXIT1-IR' if (tms) else 'SHIFT-IR'
+        elif self.state == 'SHIFT-IR':
+            self.state = 'EXIT1-IR' if (tms) else 'SHIFT-IR'
+        elif self.state == 'EXIT1-IR':
+            self.state = 'UPDATE-IR' if (tms) else 'PAUSE-IR'
+        elif self.state == 'PAUSE-IR':
+            self.state = 'EXIT2-IR' if (tms) else 'PAUSE-IR'
+        elif self.state == 'EXIT2-IR':
+            self.state = 'UPDATE-IR' if (tms) else 'SHIFT-IR'
+        elif self.state == 'UPDATE-IR':
+            self.state = 'SELECT-DR-SCAN' if (tms) else 'RUN-TEST/IDLE'
 
     def handle_rising_tck_edge(self, pins):
         (tdi, tdo, tck, tms, trst, srst, rtck) = pins
@@ -173,37 +175,35 @@ class Decoder(srd.Decoder):
             # Output the saved item (from the last CLK edge to the current).
             self.es_item = self.samplenum
             # Output the old state (from last rising TCK edge to current one).
-            self.putx([jtag_states.index(self.oldstate.value), [self.oldstate.value]])
-            self.putp(['NEW STATE', self.state.value])
+            self.putx([jtag_states.index(self.oldstate), [self.oldstate]])
+            self.putp(['NEW STATE', self.state])
 
         # Upon SHIFT-*/EXIT1-* collect the current TDI/TDO values.
-        if self.oldstate.value.startswith('SHIFT-') or \
-           self.oldstate.value.startswith('EXIT1-'):
+        if self.oldstate.startswith('SHIFT-') or \
+           self.oldstate.startswith('EXIT1-'):
             if self.first_bit:
                 self.ss_bitstring = self.samplenum
                 self.first_bit = False
             else:
-                self.putx([16, [str(self.bits_tdi[-1])]])
-                self.putx([17, [str(self.bits_tdo[-1])]])
+                self.putx([16, [str(self.bits_tdi[0])]])
+                self.putx([17, [str(self.bits_tdo[0])]])
                 # Use self.samplenum as ES of the previous bit.
-                self.bits_samplenums_tdi[-1][1] = self.samplenum
-                self.bits_samplenums_tdo[-1][1] = self.samplenum
+                self.bits_samplenums_tdi[0][1] = self.samplenum
+                self.bits_samplenums_tdo[0][1] = self.samplenum
 
-            self.bits_tdi.append(tdi)
-            self.bits_tdo.append(tdo)
+            self.bits_tdi.insert(0, tdi)
+            self.bits_tdo.insert(0, tdo)
 
             # Use self.samplenum as SS of the current bit.
-            self.bits_samplenums_tdi.append([self.samplenum, -1])
-            self.bits_samplenums_tdo.append([self.samplenum, -1])
+            self.bits_samplenums_tdi.insert(0, [self.samplenum, -1])
+            self.bits_samplenums_tdo.insert(0, [self.samplenum, -1])
 
         # Output all TDI/TDO bits if we just switched to UPDATE-*.
-        if self.state.value.startswith('UPDATE-'):
+        if self.state.startswith('UPDATE-'):
 
             self.es_bitstring = self.samplenum
 
-            t = self.state.value[-2:] + ' TDI'
-            self.bits_tdi.reverse()
-            self.bits_samplenums_tdi.reverse()
+            t = self.state[-2:] + ' TDI'
             b = ''.join(map(str, self.bits_tdi[1:]))
             h = ' (0x%x' % int('0b0' + b, 2) + ')'
             s = t + ': ' + b + h + ', ' + str(len(self.bits_tdi[1:])) + ' bits'
@@ -212,9 +212,7 @@ class Decoder(srd.Decoder):
             self.bits_tdi = []
             self.bits_samplenums_tdi = []
 
-            t = self.state.value[-2:] + ' TDO'
-            self.bits_tdo.reverse()
-            self.bits_samplenums_tdo.reverse()
+            t = self.state[-2:] + ' TDO'
             b = ''.join(map(str, self.bits_tdo[1:]))
             h = ' (0x%x' % int('0b0' + b, 2) + ')'
             s = t + ': ' + b + h + ', ' + str(len(self.bits_tdo[1:])) + ' bits'

@@ -97,7 +97,6 @@ class Decoder(srd.Decoder):
     license = 'gplv2+'
     inputs = ['logic']
     outputs = ['onewire_link']
-    tags = ['Embedded/industrial']
     channels = (
         {'id': 'owr', 'name': 'OWR', 'desc': '1-Wire signal line'},
     )
@@ -107,10 +106,10 @@ class Decoder(srd.Decoder):
     )
     annotations = (
         ('bit', 'Bit'),
-        ('warning', 'Warning'),
+        ('warnings', 'Warnings'),
         ('reset', 'Reset'),
         ('presence', 'Presence'),
-        ('overdrive', 'Overdrive speed notification'),
+        ('overdrive', 'Overdrive speed notifications'),
     )
     annotation_rows = (
         ('bits', 'Bits', (0, 2, 3)),

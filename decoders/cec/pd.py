@@ -55,8 +55,7 @@ class Decoder(srd.Decoder):
     desc = 'HDMI Consumer Electronics Control (CEC) protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Display', 'PC']
+    outputs = ['cec']
     channels = (
         {'id': 'cec', 'name': 'CEC', 'desc': 'CEC bus data'},
     )
@@ -66,11 +65,11 @@ class Decoder(srd.Decoder):
         ('eom-1', 'Message continued'),
         ('nack', 'ACK not set'),
         ('ack', 'ACK set'),
-        ('bit', 'Bit'),
-        ('byte', 'Byte'),
-        ('frame', 'Frame'),
-        ('section', 'Section'),
-        ('warning', 'Warning')
+        ('bits', 'Bits'),
+        ('bytes', 'Bytes'),
+        ('frames', 'Frames'),
+        ('sections', 'Sections'),
+        ('warnings', 'Warnings')
     )
     annotation_rows = (
         ('bits', 'Bits', (0, 1, 2, 3, 4, 5)),
@@ -117,41 +116,41 @@ class Decoder(srd.Decoder):
             return
 
         i = 0
-        string = ''
+        str = ''
         while i < len(self.cmd_bytes):
-            string += '{:02x}'.format(self.cmd_bytes[i]['val'])
+            str += '{:02x}'.format(self.cmd_bytes[i]['val'])
             if i != (len(self.cmd_bytes) - 1):
-                string += ':'
+                str += ':'
             i += 1
 
-        self.put(self.frame_start, self.frame_end, self.out_ann, [7, [string]])
+        self.put(self.frame_start, self.frame_end, self.out_ann, [7, [str]])
 
         i = 0
         operands = 0
-        string = ''
+        str = ''
         while i < len(self.cmd_bytes):
             if i == 0: # Parse header
                 (src, dst) = decode_header(self.cmd_bytes[i]['val'])
-                string = 'HDR: ' + src + ', ' + dst
+                str = 'HDR: ' + src + ', ' + dst
             elif i == 1: # Parse opcode
-                string += ' | OPC: ' + opcodes.get(self.cmd_bytes[i]['val'], 'Invalid')
+                str += ' | OPC: ' + opcodes.get(self.cmd_bytes[i]['val'], 'Invalid')
             else: # Parse operands
                 if operands == 0:
-                    string += ' | OPS: '
+                    str += ' | OPS: '
                 operands += 1
-                string += '0x{:02x}'.format(self.cmd_bytes[i]['val'])
+                str += '0x{:02x}'.format(self.cmd_bytes[i]['val'])
                 if i != len(self.cmd_bytes) - 1:
-                    string += ', '
+                    str += ', '
             i += 1
 
         # Header only commands are PINGS
         if i == 1:
-            string += ' | OPC: PING' if self.eom else ' | OPC: NONE. Aborted cmd'
+            str += ' | OPC: PING' if self.eom else ' | OPC: NONE. Aborted cmd'
 
         # Add extra information (ack of the command from the destination)
-        string += ' | R: NACK' if is_nack else ' | R: ACK'
+        str += ' | R: NACK' if is_nack else ' | R: ACK'
 
-        self.put(self.frame_start, self.frame_end, self.out_ann, [8, [string]])
+        self.put(self.frame_start, self.frame_end, self.out_ann, [8, [str]])
 
     def process(self):
         zero_time = ((self.rise - self.fall_start) / self.samplerate) * 1000.0

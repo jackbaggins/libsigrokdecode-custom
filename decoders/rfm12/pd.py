@@ -23,24 +23,23 @@ class Decoder(srd.Decoder):
     api_version = 3
     id = 'rfm12'
     name = 'RFM12'
-    longname = 'HopeRF RFM12'
+    longname = 'RFM12 control protocol'
     desc = 'HopeRF RFM12 wireless transceiver control protocol.'
     license = 'gplv2+'
     inputs = ['spi']
-    outputs = []
-    tags = ['Wireless/RF']
+    outputs = ['rfm12']
     annotations = (
         ('cmd', 'Command'),
-        ('param', 'Command parameter'),
-        ('disabled', 'Disabled bit'),
-        ('return', 'Returned value'),
-        ('disabled_return', 'Disabled returned value'),
+        ('params', 'Command parameters'),
+        ('disabled', 'Disabled bits'),
+        ('return', 'Returned values'),
+        ('disabled_return', 'Disabled returned values'),
         ('interpretation', 'Interpretation'),
     )
     annotation_rows = (
         ('commands', 'Commands', (0, 1, 2)),
-        ('returns', 'Returns', (3, 4)),
-        ('interpretations', 'Interpretations', (5,)),
+        ('return', 'Return', (3, 4)),
+        ('interpretation', 'Interpretation', (5,)),
     )
 
     def __init__(self):

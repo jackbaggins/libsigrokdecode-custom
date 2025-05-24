@@ -19,12 +19,7 @@
 
 '''
 This decoder stacks on top of the 'i2c' PD and decodes the
-Microchip ATSHA204A and ATECC508A crypto authentication protocol.
-
-The decoder might also support the following devices (untested):
- * ATSHA204
- * ATECC108
- * ATECC108A
+Microchip ATSHA204A CryptoAuthentication protocol.
 '''
 
 from .pd import Decoder

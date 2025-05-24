@@ -31,12 +31,11 @@ class Decoder(srd.Decoder):
     desc = 'Bluetooth RF module with Serial Port Profile (SPP).'
     license = 'gplv2+'
     inputs = ['uart']
-    outputs = []
-    tags = ['Wireless/RF']
+    outputs = ['pan1321']
     annotations = (
-        ('text-verbose', 'Text (verbose)'),
-        ('text', 'Text'),
-        ('warning', 'Warning'),
+        ('text-verbose', 'Human-readable text (verbose)'),
+        ('text', 'Human-readable text'),
+        ('warnings', 'Human-readable warnings'),
     )
 
     def __init__(self):

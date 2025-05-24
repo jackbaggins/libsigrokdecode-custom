@@ -30,8 +30,7 @@ class Decoder(srd.Decoder):
     desc = 'Wiegand interface for electronic entry systems.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Embedded/industrial', 'RFID']
+    outputs = ['wiegand']
     channels = (
         {'id': 'd0', 'name': 'D0', 'desc': 'Data 0 line'},
         {'id': 'd1', 'name': 'D1', 'desc': 'Data 1 line'},
@@ -43,12 +42,12 @@ class Decoder(srd.Decoder):
          'default': 4, 'values': (1, 2, 4, 8, 16, 32)},
     )
     annotations = (
-        ('bit', 'Bit'),
+        ('bits', 'Bits'),
         ('state', 'State'),
     )
     annotation_rows = (
-        ('bits', 'Bits', (0,)),
-        ('states', 'Stream states', (1,)),
+        ('bits', 'Binary value', (0,)),
+        ('state', 'Stream state', (1,)),
     )
 
     def __init__(self):

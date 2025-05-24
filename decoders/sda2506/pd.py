@@ -19,9 +19,6 @@
 
 import re
 import sigrokdecode as srd
-from common.srdhelper import SrdIntEnum
-
-Pin = SrdIntEnum.from_str('Pin', 'CLK DATA CE')
 
 ann_cmdbit, ann_databit, ann_cmd, ann_data, ann_warning = range(5)
 
@@ -33,8 +30,7 @@ class Decoder(srd.Decoder):
     desc = 'Serial nonvolatile 1-Kbit EEPROM.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['IC', 'Memory']
+    outputs = ['sda2506']
     channels = (
         {'id': 'clk', 'name': 'CLK', 'desc': 'Clock'},
         {'id': 'd', 'name': 'DATA', 'desc': 'Data'},
@@ -44,13 +40,13 @@ class Decoder(srd.Decoder):
         ('cmdbit', 'Command bit'),
         ('databit', 'Data bit'),
         ('cmd', 'Command'),
-        ('databyte', 'Data byte'),
-        ('warning', 'Warning'),
+        ('data', 'Data byte'),
+        ('warnings', 'Human-readable warnings'),
     )
     annotation_rows = (
         ('bits', 'Bits', (ann_cmdbit, ann_databit)),
-        ('data', 'Data', (ann_data,)),
         ('commands', 'Commands', (ann_cmd,)),
+        ('data', 'Data', (ann_data,)),
         ('warnings', 'Warnings', (ann_warning,)),
     )
 
@@ -91,8 +87,8 @@ class Decoder(srd.Decoder):
 
     def decode(self):
         while True:
-            # Wait for CLK edge or CE# edge.
-            clk, d, ce = self.wait([{Pin.CLK: 'e'}, {Pin.CE: 'e'}])
+            # Wait for CLK edge or CE edge.
+            clk, d, ce = self.wait([{0: 'e'}, {2: 'e'}])
 
             if self.matched[0] and ce == 1 and clk == 1:
                 # Rising clk edge and command mode.

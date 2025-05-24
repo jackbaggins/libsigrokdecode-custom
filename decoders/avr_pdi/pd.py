@@ -116,11 +116,10 @@ class Decoder(srd.Decoder):
     id = 'avr_pdi'
     name = 'AVR PDI'
     longname = 'Atmel Program and Debug Interface'
-    desc = 'Atmel ATxmega Program and Debug Interface (PDI) protocol.'
+    desc = 'Atmel proprietary interface for the ATxmega MCU.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Debug/trace']
+    outputs = ['pdi']
     channels = (
         {'id': 'reset', 'name': 'RESET', 'desc': 'RESET / PDI_CLK'},
         {'id': 'data', 'name': 'DATA', 'desc': 'PDI_DATA'},
@@ -148,7 +147,7 @@ class Decoder(srd.Decoder):
             Ann.PARITY_ERR, Ann.STOP_OK, Ann.STOP_ERR, Ann.BREAK)),
         ('pdi_fields', 'PDI fields', (Ann.OPCODE, Ann.DATA_PROG, Ann.DATA_DEV,
             Ann.PDI_BREAK)),
-        ('pdi_cmds', 'PDI commands', (Ann.ENABLE, Ann.DISABLE, Ann.COMMAND)),
+        ('pdi_cmds', 'PDI Cmds', (Ann.ENABLE, Ann.DISABLE, Ann.COMMAND)),
     )
     binary = (
         ('bytes', 'PDI protocol bytes'),

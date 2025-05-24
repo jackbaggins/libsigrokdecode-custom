@@ -18,11 +18,11 @@
 ##
 
 '''
-This decoder is a simple edge counter.
+This PD is a simple counter.
 
 It can count rising and/or falling edges, provides an optional reset
-signal. It can also divide the count to e.g. count the number of
-fixed-length words (where a word corresponds to e.g. 9 clock edges).
+signal. It can also divide the count to e.g. count the numger of
+fixed length words (where a word corresponds to e.g. 9 clock edges).
 '''
 
 from .pd import Decoder

@@ -62,26 +62,25 @@ class Decoder(srd.Decoder):
     api_version = 3
     id = 'nrf24l01'
     name = 'nRF24L01(+)'
-    longname = 'Nordic Semiconductor nRF24L01(+)'
-    desc = '2.4GHz RF transceiver chip.'
+    longname = 'Nordic Semiconductor nRF24L01/nRF24L01+'
+    desc = '2.4GHz transceiver chip.'
     license = 'gplv2+'
     inputs = ['spi']
-    outputs = []
-    tags = ['IC', 'Wireless/RF']
+    outputs = ['nrf24l01']
     options = (
         {'id': 'chip', 'desc': 'Chip type',
             'default': 'nrf24l01', 'values': ('nrf24l01', 'xn297')},
     )
     annotations = (
         # Sent from the host to the chip.
-        ('cmd', 'Command'),
-        ('tx-data', 'Payload'),
+        ('cmd', 'Commands sent to the device'),
+        ('tx-data', 'Payload sent to the device'),
 
         # Returned by the chip.
-        ('register', 'Register read'),
-        ('rx-data', 'Payload read'),
+        ('register', 'Registers read from the device'),
+        ('rx-data', 'Payload read from the device'),
 
-        ('warning', 'Warning'),
+        ('warning', 'Warnings'),
     )
     ann_cmd = 0
     ann_tx = 1

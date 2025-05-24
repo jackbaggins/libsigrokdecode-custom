@@ -46,8 +46,7 @@ class Decoder(srd.Decoder):
     desc = 'National LM75 (and compatibles) temperature sensor.'
     license = 'gplv2+'
     inputs = ['i2c']
-    outputs = []
-    tags = ['Sensor']
+    outputs = ['lm75']
     options = (
         {'id': 'sensor', 'desc': 'Sensor type', 'default': 'lm75',
             'values': ('lm75',)},
@@ -55,11 +54,11 @@ class Decoder(srd.Decoder):
             'values': (9, 10, 11, 12)},
     )
     annotations = (
-        ('celsius', 'Temperature / °C'),
-        ('kelvin', 'Temperature / Kelvin'),
-        ('text-verbose', 'Text (verbose)'),
-        ('text', 'Text'),
-        ('warning', 'Warning'),
+        ('celsius', 'Temperature in degrees Celsius'),
+        ('kelvin', 'Temperature in Kelvin'),
+        ('text-verbose', 'Human-readable text (verbose)'),
+        ('text', 'Human-readable text'),
+        ('warnings', 'Human-readable warnings'),
     )
 
     def __init__(self):

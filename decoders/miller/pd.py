@@ -38,8 +38,7 @@ class Decoder(srd.Decoder):
     desc = 'Miller encoding protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Encoding']
+    outputs = ['miller']
     channels = (
         {'id': 'data', 'name': 'Data', 'desc': 'Data signal'},
     )
@@ -51,15 +50,12 @@ class Decoder(srd.Decoder):
         ('bit', 'Bit'),
         ('bitstring', 'Bitstring'),
     )
-    annotation_rows = tuple((u + 's', v + 's', (i,)) for i, (u, v) in enumerate(annotations))
+    annotation_rows = tuple((u, v, (i,)) for i, (u, v) in enumerate(annotations))
     binary = (
         ('raw', 'Raw binary'),
     )
 
     def __init__(self):
-        self.reset()
-
-    def reset(self):
         self.samplerate = None
 
     def metadata(self, key, value):

@@ -28,7 +28,6 @@ class Decoder(srd.Decoder):
     license = 'gplv2+'
     inputs = ['uart']
     outputs = ['uart'] # Emulate uart output so that arm_itm/arm_etm can stack.
-    tags = ['Debug/trace']
     options = (
         {'id': 'stream', 'desc': 'Stream index', 'default': 1},
         {'id': 'sync_offset', 'desc': 'Initial sync offset', 'default': 0},
@@ -38,8 +37,8 @@ class Decoder(srd.Decoder):
         ('data', 'Stream data'),
     )
     annotation_rows = (
-        ('streams', 'Current streams', (0,)),
-        ('data-vals', 'Stream data', (1,)),
+        ('stream', 'Current stream', (0,)),
+        ('data', 'Stream data', (1,)),
     )
 
     def __init__(self):

@@ -71,8 +71,7 @@ class Decoder(srd.Decoder):
     desc     = 'Zilog Z80 microprocessor disassembly.'
     license  = 'gplv3+'
     inputs   = ['logic']
-    outputs  = []
-    tags     = ['Retro computing']
+    outputs  = ['z80']
     channels = tuple({
             'id': 'd%d' % i,
             'name': 'D%d' % i,
@@ -93,15 +92,15 @@ class Decoder(srd.Decoder):
         } for i in range(16)
     )
     annotations = (
-        ('addr', 'Memory or I/O address'),
+        ('addr',  'Memory or I/O address'),
         ('memrd', 'Byte read from memory'),
         ('memwr', 'Byte written to memory'),
-        ('iord', 'Byte read from I/O port'),
-        ('iowr', 'Byte written to I/O port'),
+        ('iord',  'Byte read from I/O port'),
+        ('iowr',  'Byte written to I/O port'),
         ('instr', 'Z80 CPU instruction'),
-        ('rop', 'Value of input operand'),
-        ('wop', 'Value of output operand'),
-        ('warning', 'Warning'),
+        ('rop',   'Value of input operand'),
+        ('wop',   'Value of output operand'),
+        ('warn',  'Warning message'),
     )
     annotation_rows = (
         ('addrbus', 'Address bus', (Ann.ADDR,)),

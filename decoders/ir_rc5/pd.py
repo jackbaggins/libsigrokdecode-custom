@@ -31,8 +31,7 @@ class Decoder(srd.Decoder):
     desc = 'RC-5 infrared remote control protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['IR']
+    outputs = ['ir_rc5']
     channels = (
         {'id': 'ir', 'name': 'IR', 'desc': 'IR data line'},
     )
@@ -61,12 +60,13 @@ class Decoder(srd.Decoder):
 
     def reset(self):
         self.samplerate = None
+        self.samplenum = None
         self.edges, self.bits, self.ss_es_bits = [], [], []
         self.state = 'IDLE'
 
     def start(self):
         self.out_ann = self.register(srd.OUTPUT_ANN)
-        self.next_edge = 'l' if self.options['polarity'] == 'active-low' else 'h'
+        self.old_ir = 1 if self.options['polarity'] == 'active-low' else 0
 
     def metadata(self, key, value):
         if key == srd.SRD_CONF_SAMPLERATE:
@@ -142,7 +142,11 @@ class Decoder(srd.Decoder):
             raise SamplerateError('Cannot decode without samplerate.')
         while True:
 
-            (self.ir,) = self.wait({0: self.next_edge})
+            (self.ir,) = self.wait()
+
+            # Wait for any edge (rising or falling).
+            if self.old_ir == self.ir:
+                continue
 
             # State machine.
             if self.state == 'IDLE':
@@ -150,7 +154,7 @@ class Decoder(srd.Decoder):
                 self.edges.append(self.samplenum)
                 self.bits.append([self.samplenum, bit])
                 self.state = 'MID1'
-                self.next_edge = 'l' if self.ir else 'h'
+                self.old_ir = self.ir
                 continue
             edge = self.edge_type()
             if edge == 'e':
@@ -179,4 +183,4 @@ class Decoder(srd.Decoder):
                 self.handle_bits()
                 self.reset_decoder_state()
 
-            self.next_edge = 'l' if self.ir else 'h'
+            self.old_ir = self.ir

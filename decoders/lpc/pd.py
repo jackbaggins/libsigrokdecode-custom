@@ -98,12 +98,11 @@ class Decoder(srd.Decoder):
     api_version = 3
     id = 'lpc'
     name = 'LPC'
-    longname = 'Low Pin Count'
+    longname = 'Low-Pin-Count'
     desc = 'Protocol for low-bandwidth devices on PC mainboards.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['PC']
+    outputs = ['lpc']
     channels = (
         {'id': 'lframe', 'name': 'LFRAME#', 'desc': 'Frame'},
         {'id': 'lclk',   'name': 'LCLK',    'desc': 'Clock'},
@@ -122,7 +121,7 @@ class Decoder(srd.Decoder):
         {'id': 'lsmi',   'name': 'LSMI#',   'desc': 'System Management Interrupt'},
     )
     annotations = (
-        ('warning', 'Warning'),
+        ('warnings', 'Warnings'),
         ('start', 'Start'),
         ('cycle-type', 'Cycle-type/direction'),
         ('addr', 'Address'),
@@ -132,7 +131,7 @@ class Decoder(srd.Decoder):
         ('tar2', 'Turn-around cycle 2'),
     )
     annotation_rows = (
-        ('data-vals', 'Data', (1, 2, 3, 4, 5, 6, 7)),
+        ('data', 'Data', (1, 2, 3, 4, 5, 6, 7)),
         ('warnings', 'Warnings', (0,)),
     )
 
@@ -142,6 +141,7 @@ class Decoder(srd.Decoder):
     def reset(self):
         self.state = 'IDLE'
         self.oldlclk = -1
+        self.samplenum = 0
         self.lad = -1
         self.addr = 0
         self.cur_nibble = 0
@@ -315,9 +315,13 @@ class Decoder(srd.Decoder):
         self.state = 'IDLE'
 
     def decode(self):
-        conditions = [{i: 'e'} for i in range(6)]
         while True:
-            pins = self.wait(conditions)
+            # TODO: Come up with more appropriate self.wait() conditions.
+            pins = self.wait()
+
+            # If none of the pins changed, there's nothing to do.
+            if self.oldpins == pins:
+                continue
 
             # Store current pin values for the next round.
             self.oldpins = pins

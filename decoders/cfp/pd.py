@@ -57,8 +57,7 @@ class Decoder(srd.Decoder):
     desc = '100 Gigabit C form-factor pluggable (CFP) protocol.'
     license = 'BSD'
     inputs = ['mdio']
-    outputs = []
-    tags = ['Networking']
+    outputs = ['cfp']
     annotations = (
         ('register', 'Register'),
         ('decode', 'Decode'),

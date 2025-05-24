@@ -33,8 +33,7 @@ class Decoder(srd.Decoder):
     desc = 'PS/2 keyboard/mouse interface.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['PC']
+    outputs = ['ps2']
     channels = (
         {'id': 'clk', 'name': 'Clock', 'desc': 'Clock line'},
         {'id': 'data', 'name': 'Data', 'desc': 'Data line'},
@@ -58,6 +57,7 @@ class Decoder(srd.Decoder):
 
     def reset(self):
         self.bits = []
+        self.samplenum = 0
         self.bitcount = 0
 
     def start(self):
@@ -116,11 +116,6 @@ class Decoder(srd.Decoder):
 
     def decode(self):
         while True:
-            # Sample data bits on the falling clock edge (assume the device
-            # is the transmitter). Expect the data byte transmission to end
-            # at the rising clock edge. Cope with the absence of host activity.
-            _, data_pin = self.wait({0: 'f'})
+            # Sample data bits on falling clock edge.
+            clock_pin, data_pin = self.wait({0: 'f'})
             self.handle_bits(data_pin)
-            if self.bitcount == 1 + 8 + 1 + 1:
-                _, data_pin = self.wait({0: 'r'})
-                self.handle_bits(data_pin)

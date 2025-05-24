@@ -66,10 +66,9 @@ class Decoder(srd.Decoder):
     desc = 'Digital Thermal Orientation Sensor (DTOS) protocol.'
     license = 'gplv2+'
     inputs = ['i2c']
-    outputs = []
-    tags = ['IC', 'Sensor']
+    outputs = ['mxc6225xu']
     annotations = (
-        ('text', 'Text'),
+        ('text', 'Human-readable text'),
     )
 
     def __init__(self):

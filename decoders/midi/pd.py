@@ -32,12 +32,11 @@ class Decoder(srd.Decoder):
     desc = 'Musical Instrument Digital Interface (MIDI) protocol.'
     license = 'gplv2+'
     inputs = ['uart']
-    outputs = []
-    tags = ['Audio', 'PC']
+    outputs = ['midi']
     annotations = (
-        ('text-verbose', 'Text (verbose)'),
-        ('text-sysreal-verbose', 'SysReal text (verbose)'),
-        ('text-error', 'Error text'),
+        ('text-verbose', 'Human-readable text (verbose)'),
+        ('text-sysreal-verbose', 'Human-readable SysReal text (verbose)'),
+        ('text-error', 'Human-readable Error text'),
     )
     annotation_rows = (
         ('normal', 'Normal', (0, 2)),

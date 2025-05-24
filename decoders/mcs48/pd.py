@@ -18,10 +18,6 @@
 ##
 
 import sigrokdecode as srd
-from common.srdhelper import SrdIntEnum
-
-Ann = SrdIntEnum.from_str('Ann', 'ROMDATA')
-Bin = SrdIntEnum.from_str('Bin', 'ROMDATA')
 
 class ChannelError(Exception):
     pass
@@ -34,8 +30,7 @@ class Decoder(srd.Decoder):
     desc = 'Intel MCS-48 external memory access protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Retro computing']
+    outputs = ['mcs48']
     channels = (
         {'id': 'ale', 'name': 'ALE', 'desc': 'Address latch enable'},
         {'id': 'psen', 'name': '/PSEN', 'desc': 'Program store enable'},
@@ -99,10 +94,10 @@ class Decoder(srd.Decoder):
         self.data_s = self.samplenum
         if self.started:
             anntext = '{:04X}:{:02X}'.format(self.addr, self.data)
-            self.put(self.addr_s, self.data_s, self.out_ann, [Ann.ROMDATA, [anntext]])
+            self.put(self.addr_s, self.data_s, self.out_ann, [0, [anntext]])
             bindata = self.addr.to_bytes(2, byteorder='big')
             bindata += self.data.to_bytes(1, byteorder='big')
-            self.put(self.addr_s, self.data_s, self.out_bin, [Bin.ROMDATA, bindata])
+            self.put(self.addr_s, self.data_s, self.out_bin, [0, bindata])
 
     def decode(self):
         # Address bits above A11 are optional, and are considered to be A12+.

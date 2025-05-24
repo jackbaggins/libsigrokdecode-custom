@@ -17,7 +17,6 @@
 ## along with this program; if not, see <http://www.gnu.org/licenses/>.
 ##
 
-import copy
 import sigrokdecode as srd
 from .lists import *
 
@@ -29,8 +28,7 @@ class Decoder(srd.Decoder):
     desc = '24xx series I²C EEPROM protocol.'
     license = 'gplv2+'
     inputs = ['i2c']
-    outputs = []
-    tags = ['IC', 'Memory']
+    outputs = ['eeprom24xx']
     options = (
         {'id': 'chip', 'desc': 'Chip', 'default': 'generic',
             'values': tuple(chips.keys())},
@@ -39,7 +37,7 @@ class Decoder(srd.Decoder):
     )
     annotations = (
         # Warnings
-        ('warning', 'Warning'),
+        ('warnings', 'Warnings'),
         # Bits/bytes
         ('control-code', 'Control code'),
         ('address-pin', 'Address pin (A0/A1/A2)'),
@@ -417,25 +415,16 @@ class Decoder(srd.Decoder):
             self.reset_variables()
 
     def decode(self, ss, es, data):
-        cmd, _ = data
+        self.cmd, self.databyte = data
 
         # Collect the 'BITS' packet, then return. The next packet is
         # guaranteed to belong to these bits we just stored.
-        if cmd == 'BITS':
-            _, databits = data
-            self.bits = copy.deepcopy(databits)
+        if self.cmd == 'BITS':
+            self.bits = self.databyte
             return
 
-        # Store the start/end samples of this I²C packet. Deep copy
-        # caller's data, assuming that implementation details of the
-        # above complex methods can access the data after returning
-        # from the .decode() invocation, with the data having become
-        # invalid by that time of access. This conservative approach
-        # can get weakened after close inspection of those methods.
+        # Store the start/end samples of this I²C packet.
         self.ss, self.es = ss, es
-        _, databyte = data
-        databyte = copy.deepcopy(databyte)
-        self.cmd, self.databyte = cmd, databyte
 
         # State machine.
         s = 'handle_%s' % self.state.lower().replace(' ', '_')

@@ -32,8 +32,7 @@ class Decoder(srd.Decoder):
     desc = 'Renesas/Hitachi Advanced User Debugger (AUD) protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Debug/trace']
+    outputs = ['aud']
     channels = (
         {'id': 'audck', 'name': 'AUDCK', 'desc': 'AUD clock'},
         {'id': 'naudsync', 'name': 'nAUDSYNC', 'desc': 'AUD sync'},

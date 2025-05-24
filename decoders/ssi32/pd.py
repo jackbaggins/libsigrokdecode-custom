@@ -30,8 +30,7 @@ class Decoder(srd.Decoder):
     desc = 'Synchronous Serial Interface (32bit) protocol.'
     license = 'gplv2+'
     inputs = ['spi']
-    outputs = []
-    tags = ['Embedded/industrial']
+    outputs = ['ssi32']
     options = (
         {'id': 'msgsize', 'desc': 'Message size', 'default': 64},
     )

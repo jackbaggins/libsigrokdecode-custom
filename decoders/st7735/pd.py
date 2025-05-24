@@ -72,8 +72,7 @@ class Decoder(srd.Decoder):
     desc = 'Sitronix ST7735 TFT controller protocol.'
     license = 'gplv2+'
     inputs = ['logic']
-    outputs = []
-    tags = ['Display', 'IC']
+    outputs = ['st7735']
     channels = (
         {'id': 'cs', 'name': 'CS#', 'desc': 'Chip-select'},
         {'id': 'clk', 'name': 'CLK', 'desc': 'Clock'},
@@ -89,7 +88,7 @@ class Decoder(srd.Decoder):
     annotation_rows = (
         ('bits', 'Bits', (Ann.BITS,)),
         ('fields', 'Fields', (Ann.CMD, Ann.DATA)),
-        ('descriptions', 'Descriptions', (Ann.DESC,)),
+        ('description', 'Description', (Ann.DESC,)),
     )
 
     def __init__(self):
@@ -108,7 +107,7 @@ class Decoder(srd.Decoder):
     def put_desc(self, ss, es, cmd, data):
         if cmd == -1:
             return
-        if cmd in META:
+        if META[cmd]:
             self.put(ss, es, self.out_ann, [Ann.DESC,
                 ['%s: %s' % (META[cmd]['name'].strip(), META[cmd]['desc'])]])
         else:

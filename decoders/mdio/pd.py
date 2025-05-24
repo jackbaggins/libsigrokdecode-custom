@@ -33,11 +33,10 @@ class Decoder(srd.Decoder):
     id = 'mdio'
     name = 'MDIO'
     longname = 'Management Data Input/Output'
-    desc = 'MII management bus between MAC and PHY.'
+    desc = 'Half-duplex sync serial bus for MII management between MAC and PHY.'
     license = 'bsd'
     inputs = ['logic']
     outputs = ['mdio']
-    tags = ['Networking']
     channels = (
         {'id': 'mdc', 'name': 'MDC', 'desc': 'Clock'},
         {'id': 'mdio', 'name': 'MDIO', 'desc': 'Data'},
@@ -55,11 +54,11 @@ class Decoder(srd.Decoder):
         ('decode', 'Decode'),
     )
     annotation_rows = (
-        ('bit-vals', 'Bit values', (0,)),
-        ('bit-nums', 'Bit numbers', (1,)),
-        ('frames', 'Frames', (2, 3)),
-        ('frame-errors', 'Frame errors', (4,)),
-        ('decode-vals', 'Decode', (5,)),
+        ('bit-val', 'Bit value', (0,)),
+        ('bit-num', 'Bit number', (1,)),
+        ('frame', 'Frame', (2, 3)),
+        ('frame-error', 'Frame error', (4,)),
+        ('decode', 'Decode', (5,)),
     )
 
     def __init__(self):
@@ -67,6 +66,7 @@ class Decoder(srd.Decoder):
 
     def reset(self):
         self.illegal_bus = 0
+        self.samplenum = -1
         self.clause45_addr = -1 # Clause 45 is context sensitive.
         self.reset_decoder_state()
 
