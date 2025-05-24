@@ -67,8 +67,8 @@ extern SRD_PRIV int max_session_id;
  * @section sec_irc IRC
  *
  * You can find the sigrok developers in the
- * <a href="ircs://irc.libera.chat/#sigrok">\#sigrok</a>
- * IRC channel on Libera.Chat.
+ * <a href="irc://chat.freenode.net/sigrok">\#sigrok</a>
+ * IRC channel on Freenode.
  *
  * @section sec_website Website
  *
@@ -172,7 +172,6 @@ static int print_searchpaths(void)
 		py_path = PyList_GetItem(py_paths, i);
 		py_bytes = PyUnicode_AsUTF8String(py_path);
 		g_string_append_printf(s, " - %s\n", PyBytes_AsString(py_bytes));
-		Py_DECREF(py_bytes);
 	}
 	s->str[s->len - 1] = '\0';
 	srd_dbg("%s", s->str);
@@ -270,46 +269,15 @@ SRD_API int srd_init(const char *path)
 	}
 
 	/* Environment variable overrides everything, for debugging. */
-	/*
-	 * TODO
-	 * Is the comment still applicable and correct or up to date?
-	 * This implementation adds paths which were specified by the
-	 * env var. Which can shadow files in other locations, or can
-	 * extend the set of available decoders. Which need not only
-	 * serve for development, it is as beneficial to regular users.
-	 * Without shadowing all other files still are found.
-	 */
 	if ((env_path = g_getenv("SIGROKDECODE_DIR"))) {
 		if ((ret = srd_decoder_searchpath_add(env_path)) != SRD_OK) {
 			Py_Finalize();
 			return ret;
 		}
 	}
-	env_path = g_getenv("SIGROKDECODE_PATH");
-	if (env_path) {
-		char **dir_list, **dir_iter, *dir_item;
-		dir_list = g_strsplit(env_path, G_SEARCHPATH_SEPARATOR_S, 0);
-		for (dir_iter = dir_list; *dir_iter; dir_iter++) {
-			dir_item = *dir_iter;
-			if (!dir_item || !*dir_item)
-				continue;
-			ret = srd_decoder_searchpath_add(dir_item);
-			if (ret != SRD_OK) {
-				Py_Finalize();
-				return ret;
-			}
-		}
-		g_strfreev(dir_list);
-	}
 
-#if PY_VERSION_HEX < 0x03090000
-	/*
-	 * Initialize and acquire the Python GIL. In Python 3.7+ this
-	 * will be done implicitly as part of the Py_InitializeEx()
-	 * call above. PyEval_InitThreads() was deprecated in 3.9.
-	 */
+	/* Initialize the Python GIL (this also happens to acquire it). */
 	PyEval_InitThreads();
-#endif
 
 	/* Release the GIL (ignore return value, we don't need it here). */
 	(void)PyEval_SaveThread();
@@ -319,12 +287,6 @@ SRD_API int srd_init(const char *path)
 	print_searchpaths();
 
 	return SRD_OK;
-}
-
-static void srd_session_destroy_cb(void *arg, void *ignored)
-{
-	(void)ignored; // Prevent unused warning
-	srd_session_destroy((struct srd_session *)arg);
 }
 
 /**
@@ -345,9 +307,8 @@ SRD_API int srd_exit(void)
 {
 	srd_dbg("Exiting libsigrokdecode.");
 
-	g_slist_foreach(sessions, srd_session_destroy_cb, NULL);
-	g_slist_free(sessions);
-	sessions = NULL;
+	for (GSList *l = sessions; l; l = l->next)
+		srd_session_destroy(l->data);
 
 	srd_decoder_unload_all();
 	g_slist_free_full(searchpaths, g_free);
@@ -386,6 +347,8 @@ SRD_API int srd_exit(void)
  * @return SRD_OK upon success, a (negative) error code otherwise.
  *
  * @private
+ *
+ * @since 0.1.0
  */
 SRD_PRIV int srd_decoder_searchpath_add(const char *path)
 {
@@ -433,12 +396,7 @@ err:
  */
 SRD_API GSList *srd_searchpaths_get(void)
 {
-	GSList *paths = NULL;
-
-	for (GSList *l = searchpaths; l; l = l->next)
-		paths = g_slist_append(paths, g_strdup(l->data));
-
-	return paths;
+	return g_slist_copy_deep(searchpaths, (GCopyFunc)g_strdup, NULL);
 }
 
 /** @} */
