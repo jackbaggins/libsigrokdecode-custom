@@ -31,13 +31,12 @@ typedef struct {
 } srd_Decoder;
 
 /* This is only used for nicer srd_dbg() output. */
-SRD_PRIV const char *output_type_name(unsigned int idx)
+static const char *output_type_name(unsigned int idx)
 {
-	static const char *names[] = {
+	static const char names[][16] = {
 		"OUTPUT_ANN",
 		"OUTPUT_PYTHON",
 		"OUTPUT_BINARY",
-		"OUTPUT_LOGIC",
 		"OUTPUT_META",
 		"(invalid)"
 	};
@@ -67,16 +66,16 @@ static int convert_annotation(struct srd_decoder_inst *di, PyObject *obj,
 
 	/* Should be a list of [annotation class, [string, ...]]. */
 	if (!PyList_Check(obj)) {
-		srd_err("Protocol decoder %s submitted an annotation that is not a list",
-				di->decoder->name);
+		srd_err("Protocol decoder %s submitted an annotation that"
+			" is not a list", di->decoder->name);
 		goto err;
 	}
 
 	/* Should have 2 elements. */
 	if (PyList_Size(obj) != 2) {
-		ssize_t sz = PyList_Size(obj);
-		srd_err("Protocol decoder %s submitted annotation list with %zd elements instead of 2",
-				di->decoder->name, sz);
+		srd_err("Protocol decoder %s submitted annotation list with "
+			"%zd elements instead of 2", di->decoder->name,
+			PyList_Size(obj));
 		goto err;
 	}
 
@@ -86,27 +85,27 @@ static int convert_annotation(struct srd_decoder_inst *di, PyObject *obj,
 	 */
 	py_tmp = PyList_GetItem(obj, 0);
 	if (!PyLong_Check(py_tmp)) {
-		srd_err("Protocol decoder %s submitted annotation list, but first element was not an integer.",
-				di->decoder->name);
+		srd_err("Protocol decoder %s submitted annotation list, but "
+			"first element was not an integer.", di->decoder->name);
 		goto err;
 	}
 	ann_class = PyLong_AsLong(py_tmp);
 	if (!(pdo = g_slist_nth_data(di->decoder->annotations, ann_class))) {
-		srd_err("Protocol decoder %s submitted data to unregistered annotation class %d.",
-				di->decoder->name, ann_class);
+		srd_err("Protocol decoder %s submitted data to unregistered "
+			"annotation class %d.", di->decoder->name, ann_class);
 		goto err;
 	}
 
 	/* Second element must be a list. */
 	py_tmp = PyList_GetItem(obj, 1);
 	if (!PyList_Check(py_tmp)) {
-		srd_err("Protocol decoder %s submitted annotation list, but second element was not a list.",
-				di->decoder->name);
+		srd_err("Protocol decoder %s submitted annotation list, but "
+			"second element was not a list.", di->decoder->name);
 		goto err;
 	}
 	if (py_strseq_to_char(py_tmp, &ann_text) != SRD_OK) {
-		srd_err("Protocol decoder %s submitted annotation list, but second element was malformed.",
-				di->decoder->name);
+		srd_err("Protocol decoder %s submitted annotation list, but "
+			"second element was malformed.", di->decoder->name);
 		goto err;
 	}
 
@@ -115,89 +114,6 @@ static int convert_annotation(struct srd_decoder_inst *di, PyObject *obj,
 	pda->ann_text = ann_text;
 
 	PyGILState_Release(gstate);
-
-	return SRD_OK;
-
-err:
-	PyGILState_Release(gstate);
-
-	return SRD_ERR_PYTHON;
-}
-
-static void release_logic(struct srd_proto_data_logic *pdl)
-{
-	if (!pdl)
-		return;
-	g_free((void *)pdl->data);
-}
-
-static int convert_logic(struct srd_decoder_inst *di, PyObject *obj,
-		struct srd_proto_data *pdata)
-{
-	struct srd_proto_data_logic *pdl;
-	PyObject *py_tmp;
-	Py_ssize_t size;
-	int logic_group;
-	char *group_name, *buf;
-	PyGILState_STATE gstate;
-
-	gstate = PyGILState_Ensure();
-
-	/* Should be a list of [logic group, bytes]. */
-	if (!PyList_Check(obj)) {
-		srd_err("Protocol decoder %s submitted non-list for SRD_OUTPUT_LOGIC.",
-			di->decoder->name);
-		goto err;
-	}
-
-	/* Should have 2 elements. */
-	if (PyList_Size(obj) != 2) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_LOGIC list "
-				"with %zd elements instead of 2", di->decoder->name,
-				PyList_Size(obj));
-		goto err;
-	}
-
-	/* The first element should be an integer. */
-	py_tmp = PyList_GetItem(obj, 0);
-	if (!PyLong_Check(py_tmp)) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_LOGIC list, "
-			"but first element was not an integer.", di->decoder->name);
-		goto err;
-	}
-	logic_group = PyLong_AsLong(py_tmp);
-	if (!(group_name = g_slist_nth_data(di->decoder->logic_output_channels, logic_group))) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_LOGIC with "
-			"unregistered logic group %d.", di->decoder->name, logic_group);
-		goto err;
-	}
-
-	/* Second element should be bytes. */
-	py_tmp = PyList_GetItem(obj, 1);
-	if (!PyBytes_Check(py_tmp)) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_LOGIC list, "
-			"but second element was not bytes.", di->decoder->name);
-		goto err;
-	}
-
-	/* Consider an empty set of bytes a bug. */
-	if (PyBytes_Size(py_tmp) == 0) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_LOGIC "
-				"with empty data set.", di->decoder->name);
-		goto err;
-	}
-
-	if (PyBytes_AsStringAndSize(py_tmp, &buf, &size) == -1)
-		goto err;
-
-	PyGILState_Release(gstate);
-
-	pdl = pdata->data;
-	pdl->logic_group = logic_group;
-	/* pdl->repeat_count is set by the caller as it depends on the sample range */
-	if (!(pdl->data = g_try_malloc(size)))
-		return SRD_ERR_MALLOC;
-	memcpy((void *)pdl->data, (const void *)buf, size);
 
 	return SRD_OK;
 
@@ -235,38 +151,38 @@ static int convert_binary(struct srd_decoder_inst *di, PyObject *obj,
 
 	/* Should have 2 elements. */
 	if (PyList_Size(obj) != 2) {
-		ssize_t sz = PyList_Size(obj);
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY list with %zd elements instead of 2",
-				di->decoder->name, sz);
+		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY list "
+				"with %zd elements instead of 2", di->decoder->name,
+				PyList_Size(obj));
 		goto err;
 	}
 
 	/* The first element should be an integer. */
 	py_tmp = PyList_GetItem(obj, 0);
 	if (!PyLong_Check(py_tmp)) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY list, but first element was not an integer.",
-				di->decoder->name);
+		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY list, "
+			"but first element was not an integer.", di->decoder->name);
 		goto err;
 	}
 	bin_class = PyLong_AsLong(py_tmp);
 	if (!(class_name = g_slist_nth_data(di->decoder->binary, bin_class))) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY with unregistered binary class %d.",
-				di->decoder->name, bin_class);
+		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY with "
+			"unregistered binary class %d.", di->decoder->name, bin_class);
 		goto err;
 	}
 
 	/* Second element should be bytes. */
 	py_tmp = PyList_GetItem(obj, 1);
 	if (!PyBytes_Check(py_tmp)) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY list, but second element was not bytes.",
-				di->decoder->name);
+		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY list, "
+			"but second element was not bytes.", di->decoder->name);
 		goto err;
 	}
 
 	/* Consider an empty set of bytes a bug. */
 	if (PyBytes_Size(py_tmp) == 0) {
-		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY with empty data set.",
-				di->decoder->name);
+		srd_err("Protocol decoder %s submitted SRD_OUTPUT_BINARY "
+				"with empty data set.", di->decoder->name);
 		goto err;
 	}
 
@@ -338,7 +254,7 @@ static inline struct srd_decoder_inst *srd_inst_find_by_obj(
 	sess = sessions->data;
 	di = sess->di_list->data;
 	if (di->py_inst == obj)
-		return di;
+		return di; 
 
 	di = NULL;
 	for (l = sessions; di == NULL && l != NULL; l = l->next) {
@@ -359,8 +275,8 @@ static int convert_meta(struct srd_proto_data *pdata, PyObject *obj)
 
 	if (g_variant_type_equal(pdata->pdo->meta_type, G_VARIANT_TYPE_INT64)) {
 		if (!PyLong_Check(obj)) {
-			PyErr_Format(PyExc_TypeError,
-				"This output was registered as 'int', but something else was passed.");
+			PyErr_Format(PyExc_TypeError, "This output was registered "
+					"as 'int', but something else was passed.");
 			goto err;
 		}
 		intvalue = PyLong_AsLongLong(obj);
@@ -369,8 +285,8 @@ static int convert_meta(struct srd_proto_data *pdata, PyObject *obj)
 		pdata->data = g_variant_new_int64(intvalue);
 	} else if (g_variant_type_equal(pdata->pdo->meta_type, G_VARIANT_TYPE_DOUBLE)) {
 		if (!PyFloat_Check(obj)) {
-			PyErr_Format(PyExc_TypeError,
-				"This output was registered as 'float', but something else was passed.");
+			PyErr_Format(PyExc_TypeError, "This output was registered "
+					"as 'float', but something else was passed.");
 			goto err;
 		}
 		dvalue = PyFloat_AsDouble(obj);
@@ -396,13 +312,6 @@ static void release_meta(GVariant *gvar)
 	g_variant_unref(gvar);
 }
 
-PyDoc_STRVAR(Decoder_put_doc,
-	"Put an annotation for the specified span of samples.\n"
-	"\n"
-	"Arguments: start and end sample number, stream id, annotation data.\n"
-	"Annotation data's layout depends on the output stream type."
-);
-
 static PyObject *Decoder_put(PyObject *self, PyObject *args)
 {
 	GSList *l;
@@ -412,7 +321,6 @@ static PyObject *Decoder_put(PyObject *self, PyObject *args)
 	struct srd_proto_data pdata;
 	struct srd_proto_data_annotation pda;
 	struct srd_proto_data_binary pdb;
-	struct srd_proto_data_logic pdl;
 	uint64_t start_sample, end_sample;
 	int output_id;
 	struct srd_pd_callback *cb;
@@ -445,13 +353,9 @@ static PyObject *Decoder_put(PyObject *self, PyObject *args)
 	}
 	pdo = l->data;
 
-	/* Upon SRD_OUTPUT_PYTHON for stacked PDs, we have a nicer log message later. */
-	if (pdo->output_type != SRD_OUTPUT_PYTHON && di->next_di != NULL) {
-		srd_spew("Instance %s put %" PRIu64 "-%" PRIu64 " %s on "
-			 "oid %d (%s).", di->inst_id, start_sample, end_sample,
-			 output_type_name(pdo->output_type), output_id,
-			 pdo->proto_id);
-	}
+	srd_spew("Instance %s put %" PRIu64 "-%" PRIu64 " %s on oid %d.",
+		 di->inst_id, start_sample, end_sample,
+		 output_type_name(pdo->output_type), output_id);
 
 	pdata.start_sample = start_sample;
 	pdata.end_sample = end_sample;
@@ -477,14 +381,11 @@ static PyObject *Decoder_put(PyObject *self, PyObject *args)
 	case SRD_OUTPUT_PYTHON:
 		for (l = di->next_di; l; l = l->next) {
 			next_di = l->data;
-			srd_spew("Instance %s put %" PRIu64 "-%" PRIu64 " %s "
-				 "on oid %d (%s) to instance %s.", di->inst_id,
-				 start_sample,
-				 end_sample, output_type_name(pdo->output_type),
-				 output_id, pdo->proto_id, next_di->inst_id);
-			py_res = PyObject_CallMethod(next_di->py_inst, "decode",
-				"KKO", start_sample, end_sample, py_data);
-			if (!py_res) {
+			srd_spew("Sending %" PRIu64 "-%" PRIu64 " to instance %s",
+				 start_sample, end_sample, next_di->inst_id);
+			if (!(py_res = PyObject_CallMethod(
+				next_di->py_inst, "decode", "KKO", start_sample,
+				end_sample, py_data))) {
 				srd_exception_catch("Calling %s decode() failed",
 							next_di->inst_id);
 			}
@@ -511,25 +412,6 @@ static PyObject *Decoder_put(PyObject *self, PyObject *args)
 			cb->cb(&pdata, cb->cb_data);
 			Py_END_ALLOW_THREADS
 			release_binary(pdata.data);
-		}
-		break;
-	case SRD_OUTPUT_LOGIC:
-		if ((cb = srd_pd_output_callback_find(di->sess, pdo->output_type))) {
-			pdata.data = &pdl;
-			/* Convert from PyDict to srd_proto_data_logic. */
-			if (convert_logic(di, py_data, &pdata) != SRD_OK) {
-				/* An error was already logged. */
-				break;
-			}
-			if (end_sample <= start_sample) {
-				srd_err("Ignored SRD_OUTPUT_LOGIC with invalid sample range.");
-				break;
-			}
-			pdl.repeat_count = (end_sample - start_sample) - 1;
-			Py_BEGIN_ALLOW_THREADS
-			cb->cb(&pdata, cb->cb_data);
-			Py_END_ALLOW_THREADS
-			release_logic(pdata.data);
 		}
 		break;
 	case SRD_OUTPUT_META:
@@ -561,12 +443,8 @@ err:
 	return NULL;
 }
 
-PyDoc_STRVAR(Decoder_register_doc,
-	"Register a new output stream."
-);
-
-static PyObject *Decoder_register(PyObject *self,
-	PyObject *args, PyObject *kwargs)
+static PyObject *Decoder_register(PyObject *self, PyObject *args,
+		PyObject *kwargs)
 {
 	struct srd_decoder_inst *di;
 	struct srd_pd_output *pdo;
@@ -636,6 +514,9 @@ static PyObject *Decoder_register(PyObject *self,
 		return py_new_output_id;
 	}
 
+	srd_dbg("Instance %s creating new output type %d for %s.",
+		di->inst_id, output_type, proto_id);
+
 	pdo = g_malloc(sizeof(struct srd_pd_output));
 
 	/* pdo_id is just a simple index, nothing is deleted from this list anyway. */
@@ -654,10 +535,6 @@ static PyObject *Decoder_register(PyObject *self,
 	py_new_output_id = Py_BuildValue("i", pdo->pdo_id);
 
 	PyGILState_Release(gstate);
-
-	srd_dbg("Instance %s creating new output type %s as oid %d (%s).",
-		di->inst_id, output_type_name(output_type), pdo->pdo_id,
-		proto_id);
 
 	return py_new_output_id;
 
@@ -720,13 +597,13 @@ static PyObject *get_current_pinvalues(const struct srd_decoder_inst *di)
 		/* A channelmap value of -1 means "unused optional channel". */
 		if (di->dec_channelmap[i] == -1) {
 			/* Value of unused channel is 0xff, instead of 0 or 1. */
-			PyTuple_SetItem(py_pinvalues, i, PyLong_FromUnsignedLong(0xff));
+			PyTuple_SetItem(py_pinvalues, i, PyLong_FromLong(0xff));
 		} else {
 			sample_pos = di->inbuf + ((di->abs_cur_samplenum - di->abs_start_samplenum) * di->data_unitsize);
 			byte_offset = di->dec_channelmap[i] / 8;
 			bit_offset = di->dec_channelmap[i] % 8;
 			sample = *(sample_pos + byte_offset) & (1 << bit_offset) ? 1 : 0;
-			PyTuple_SetItem(py_pinvalues, i, PyLong_FromUnsignedLong(sample));
+			PyTuple_SetItem(py_pinvalues, i, PyLong_FromLong(sample));
 		}
 	}
 
@@ -740,20 +617,18 @@ static PyObject *get_current_pinvalues(const struct srd_decoder_inst *di)
  *
  * If there are no terms in the condition, 'term_list' will be NULL.
  *
- * @param di The decoder instance to use. Must not be NULL.
  * @param py_dict A Python dict containing terms. Must not be NULL.
  * @param term_list Pointer to a GSList which will be set to the newly
  *                  created list of terms. Must not be NULL.
  *
  * @return SRD_OK upon success, a negative error code otherwise.
  */
-static int create_term_list(struct srd_decoder_inst *di,
-	PyObject *py_dict, GSList **term_list)
+static int create_term_list(PyObject *py_dict, GSList **term_list)
 {
 	Py_ssize_t pos = 0;
 	PyObject *py_key, *py_value;
 	struct srd_term *term;
-	int64_t num_samples_to_skip;
+	uint64_t num_samples_to_skip;
 	char *term_str;
 	PyGILState_STATE gstate;
 
@@ -770,6 +645,7 @@ static int create_term_list(struct srd_decoder_inst *di,
 		/* Check whether the current key is a string or a number. */
 		if (PyLong_Check(py_key)) {
 			/* The key is a number. */
+			/* TODO: Check if the number is a valid channel. */
 			/* Get the value string. */
 			if ((py_pydictitem_as_str(py_dict, py_key, &term_str)) != SRD_OK) {
 				srd_err("Failed to get the value.");
@@ -778,12 +654,10 @@ static int create_term_list(struct srd_decoder_inst *di,
 			term = g_malloc(sizeof(struct srd_term));
 			term->type = get_term_type(term_str);
 			term->channel = PyLong_AsLong(py_key);
-			if (term->channel < 0 || term->channel >= di->dec_num_channels)
-				term->type = SRD_TERM_ALWAYS_FALSE;
 			g_free(term_str);
 		} else if (PyUnicode_Check(py_key)) {
 			/* The key is a string. */
-			/* TODO: Check if the key is "skip". */
+			/* TODO: Check if it's "skip". */
 			if ((py_pydictitem_as_long(py_dict, py_key, &num_samples_to_skip)) != SRD_OK) {
 				srd_err("Failed to get number of samples to skip.");
 				goto err;
@@ -792,8 +666,6 @@ static int create_term_list(struct srd_decoder_inst *di,
 			term->type = SRD_TERM_SKIP;
 			term->num_samples_to_skip = num_samples_to_skip;
 			term->num_samples_already_skipped = 0;
-			if (num_samples_to_skip < 0)
-				term->type = SRD_TERM_ALWAYS_FALSE;
 		} else {
 			srd_err("Term key is neither a string nor a number.");
 			goto err;
@@ -873,14 +745,14 @@ static int set_new_condition_list(PyObject *self, PyObject *args)
 		num_conditions = PyList_Size(py_conditionlist);
 		if (num_conditions == 0)
 			goto ret_9999; /* The PD invoked self.wait([]). */
-		Py_INCREF(py_conditionlist);
+		Py_IncRef(py_conditionlist);
 	} else if (PyDict_Check(py_conds)) {
 		/* 'py_conds' is a dict. */
 		if (PyDict_Size(py_conds) == 0)
 			goto ret_9999; /* The PD invoked self.wait({}). */
 		/* Make a list and put the dict in there for convenience. */
 		py_conditionlist = PyList_New(1);
-		Py_INCREF(py_conds);
+		Py_IncRef(py_conds);
 		PyList_SetItem(py_conditionlist, 0, py_conds);
 		num_conditions = 1;
 	} else {
@@ -904,7 +776,7 @@ static int set_new_condition_list(PyObject *self, PyObject *args)
 		}
 
 		/* Create the list of terms in this condition. */
-		if ((ret = create_term_list(di, py_dict, &term_list)) < 0)
+		if ((ret = create_term_list(py_dict, &term_list)) < 0)
 			break;
 
 		/* Add the new condition to the PD instance's condition list. */
@@ -963,23 +835,6 @@ static int set_skip_condition(struct srd_decoder_inst *di, uint64_t count)
 	return SRD_OK;
 }
 
-PyDoc_STRVAR(Decoder_wait_doc,
-	"Wait for one or more conditions to occur.\n"
-	"\n"
-	"Returns the sample data at the next position where the condition\n"
-	"is seen. When the optional condition is missing or empty, the next\n"
-	"sample number is used. The condition can be a dictionary with one\n"
-	"condition's details, or a list of dictionaries specifying multiple\n"
-	"conditions of which at least one condition must be true. Dicts can\n"
-	"contain one or more key/value pairs, all of which must be true for\n"
-	"the dict's condition to be considered true. The key either is a\n"
-	"channel index or a keyword, the value is the operation's parameter.\n"
-	"\n"
-	"Supported parameters for channel number keys: 'h', 'l', 'r', 'f',\n"
-	"or 'e' for level or edge conditions. Other supported keywords:\n"
-	"'skip' to advance over the given number of samples.\n"
-);
-
 static PyObject *Decoder_wait(PyObject *self, PyObject *args)
 {
 	int ret;
@@ -987,7 +842,7 @@ static PyObject *Decoder_wait(PyObject *self, PyObject *args)
 	unsigned int i;
 	gboolean found_match;
 	struct srd_decoder_inst *di;
-	PyObject *py_pinvalues, *py_matched, *py_samplenum;
+	PyObject *py_pinvalues, *py_matched;
 	PyGILState_STATE gstate;
 
 	if (!self || !args)
@@ -1054,16 +909,14 @@ static PyObject *Decoder_wait(PyObject *self, PyObject *args)
 		/* If there's a match, set self.samplenum etc. and return. */
 		if (found_match) {
 			/* Set self.samplenum to the (absolute) sample number that matched. */
-			py_samplenum = PyLong_FromUnsignedLongLong(di->abs_cur_samplenum);
-			PyObject_SetAttrString(di->py_inst, "samplenum", py_samplenum);
-			Py_DECREF(py_samplenum);
+			PyObject_SetAttrString(di->py_inst, "samplenum",
+				PyLong_FromLong(di->abs_cur_samplenum));
 
 			if (di->match_array && di->match_array->len > 0) {
 				py_matched = PyTuple_New(di->match_array->len);
 				for (i = 0; i < di->match_array->len; i++)
 					PyTuple_SetItem(py_matched, i, PyBool_FromLong(di->match_array->data[i]));
 				PyObject_SetAttrString(di->py_inst, "matched", py_matched);
-				Py_DECREF(py_matched);
 				match_array_free(di);
 			} else {
 				PyObject_SetAttrString(di->py_inst, "matched", Py_None);
@@ -1090,27 +943,6 @@ static PyObject *Decoder_wait(PyObject *self, PyObject *args)
 		g_cond_signal(&di->handled_all_samples_cond);
 
 		/*
-		 * When EOF was provided externally, communicate the
-		 * Python EOFError exception to .decode() and return
-		 * from the .wait() method call. This is motivated by
-		 * the use of Python context managers, so that .decode()
-		 * methods can "close" incompletely accumulated data
-		 * when the sample data is exhausted.
-		 */
-		if (di->communicate_eof) {
-			/* Advance self.samplenum to the (absolute) last sample number. */
-			py_samplenum = PyLong_FromUnsignedLongLong(di->abs_cur_samplenum);
-			PyObject_SetAttrString(di->py_inst, "samplenum", py_samplenum);
-			Py_DECREF(py_samplenum);
-			/* Raise an EOFError Python exception. */
-			srd_dbg("%s: %s: Raising EOF from wait().",
-				di->inst_id, __func__);
-			g_mutex_unlock(&di->data_mutex);
-			PyErr_SetString(PyExc_EOFError, "samples exhausted");
-			goto err;
-		}
-
-		/*
 		 * When termination of wait() and decode() was requested,
 		 * then exit the loop after releasing the mutex.
 		 */
@@ -1134,14 +966,6 @@ err:
 	return NULL;
 }
 
-PyDoc_STRVAR(Decoder_has_channel_doc,
-	"Check whether input data is supplied for a given channel.\n"
-	"\n"
-	"Argument: A channel index.\n"
-	"Returns: A boolean, True if the channel is connected,\n"
-	"False if the channel is open (won't see any input data).\n"
-);
-
 /**
  * Return whether the specified channel was supplied to the decoder.
  *
@@ -1157,7 +981,6 @@ static PyObject *Decoder_has_channel(PyObject *self, PyObject *args)
 	int idx, count;
 	struct srd_decoder_inst *di;
 	PyGILState_STATE gstate;
-	PyObject *bool_ret;
 
 	if (!self || !args)
 		return NULL;
@@ -1188,9 +1011,7 @@ static PyObject *Decoder_has_channel(PyObject *self, PyObject *args)
 
 	PyGILState_Release(gstate);
 
-	bool_ret = (di->dec_channelmap[idx] == -1) ? Py_False : Py_True;
-	Py_INCREF(bool_ret);
-	return bool_ret;
+	return (di->dec_channelmap[idx] == -1) ? Py_False : Py_True;
 
 err:
 	PyGILState_Release(gstate);
@@ -1198,26 +1019,16 @@ err:
 	return NULL;
 }
 
-PyDoc_STRVAR(Decoder_doc, "sigrok Decoder base class");
-
 static PyMethodDef Decoder_methods[] = {
-	{ "put",
-	  Decoder_put, METH_VARARGS,
-	  Decoder_put_doc,
-	},
-	{ "register",
-	  (PyCFunction)(void(*)(void))Decoder_register, METH_VARARGS | METH_KEYWORDS,
-	  Decoder_register_doc,
-	},
-	{ "wait",
-	  Decoder_wait, METH_VARARGS,
-	  Decoder_wait_doc,
-	},
-	{ "has_channel",
-	  Decoder_has_channel, METH_VARARGS,
-	  Decoder_has_channel_doc,
-	},
-	ALL_ZERO,
+	{ "put", Decoder_put, METH_VARARGS,
+	  "Accepts a dictionary with the following keys: startsample, endsample, data" },
+	{ "register", (PyCFunction)Decoder_register, METH_VARARGS|METH_KEYWORDS,
+			"Register a new output stream" },
+	{ "wait", Decoder_wait, METH_VARARGS,
+			"Wait for one or more conditions to occur" },
+	{ "has_channel", Decoder_has_channel, METH_VARARGS,
+			"Report whether a channel was supplied" },
+	{NULL, NULL, 0, NULL}
 };
 
 /**
@@ -1231,10 +1042,10 @@ SRD_PRIV PyObject *srd_Decoder_type_new(void)
 {
 	PyType_Spec spec;
 	PyType_Slot slots[] = {
-		{ Py_tp_doc, Decoder_doc },
+		{ Py_tp_doc, "sigrok Decoder base class" },
 		{ Py_tp_methods, Decoder_methods },
 		{ Py_tp_new, (void *)&PyType_GenericNew },
-		ALL_ZERO,
+		{ 0, NULL }
 	};
 	PyObject *py_obj;
 	PyGILState_STATE gstate;
