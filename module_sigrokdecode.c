@@ -63,9 +63,9 @@ PyMODINIT_FUNC PyInit_sigrokdecode(void)
 		goto err_out;
 	if (PyModule_AddIntConstant(mod, "OUTPUT_BINARY", SRD_OUTPUT_BINARY) < 0)
 		goto err_out;
-	if (PyModule_AddIntConstant(mod, "OUTPUT_LOGIC", SRD_OUTPUT_LOGIC) < 0)
-		goto err_out;
 	if (PyModule_AddIntConstant(mod, "OUTPUT_META", SRD_OUTPUT_META) < 0)
+		goto err_out;
+	if (PyModule_AddIntConstant(mod, "OUTPUT_LOGIC", SRD_OUTPUT_LOGIC) < 0)
 		goto err_out;
 	/* Expose meta input symbols. */
 	if (PyModule_AddIntConstant(mod, "SRD_CONF_SAMPLERATE", SRD_CONF_SAMPLERATE) < 0)

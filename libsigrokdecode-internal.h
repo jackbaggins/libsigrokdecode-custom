@@ -27,19 +27,7 @@
 #include <Python.h> /* First, so we avoid a _POSIX_C_SOURCE warning. */
 #include "libsigrokdecode.h"
 
-/*
- * Static definition of tables ending with an all-zero sentinel entry
- * may raise warnings when compiling with -Wmissing-field-initializers.
- * GCC suppresses the warning only with { 0 }, clang wants { } instead.
- */
-#ifdef __clang__
-#  define ALL_ZERO { }
-#else
-#  define ALL_ZERO { 0 }
-#endif
-
 enum {
-	SRD_TERM_ALWAYS_FALSE,
 	SRD_TERM_HIGH,
 	SRD_TERM_LOW,
 	SRD_TERM_RISING_EDGE,
@@ -93,8 +81,6 @@ SRD_PRIV int srd_inst_decode(struct srd_decoder_inst *di,
 		uint64_t abs_start_samplenum, uint64_t abs_end_samplenum,
 		const uint8_t *inbuf, uint64_t inbuflen, uint64_t unitsize);
 SRD_PRIV int process_samples_until_condition_match(struct srd_decoder_inst *di, gboolean *found_match);
-SRD_PRIV int srd_inst_flush(struct srd_decoder_inst *di);
-SRD_PRIV int srd_inst_send_eof(struct srd_decoder_inst *di);
 SRD_PRIV int srd_inst_terminate_reset(struct srd_decoder_inst *di);
 SRD_PRIV void srd_inst_free(struct srd_decoder_inst *di);
 SRD_PRIV void srd_inst_free_all(struct srd_session *sess);
@@ -122,7 +108,6 @@ SRD_PRIV long srd_decoder_apiver(const struct srd_decoder *d);
 
 /* type_decoder.c */
 SRD_PRIV PyObject *srd_Decoder_type_new(void);
-SRD_PRIV const char *output_type_name(unsigned int idx);
 
 /* type_logic.c */
 SRD_PRIV PyObject *srd_logic_type_new(void);
@@ -137,7 +122,7 @@ SRD_PRIV int py_attr_as_strlist(PyObject *py_obj, const char *attr, GSList **out
 SRD_PRIV int py_dictitem_as_str(PyObject *py_obj, const char *key, char **outstr);
 SRD_PRIV int py_listitem_as_str(PyObject *py_obj, Py_ssize_t idx, char **outstr);
 SRD_PRIV int py_pydictitem_as_str(PyObject *py_obj, PyObject *py_key, char **outstr);
-SRD_PRIV int py_pydictitem_as_long(PyObject *py_obj, PyObject *py_key, int64_t *out);
+SRD_PRIV int py_pydictitem_as_long(PyObject *py_obj, PyObject *py_key, uint64_t *out);
 SRD_PRIV int py_str_as_str(PyObject *py_str, char **outstr);
 SRD_PRIV int py_strseq_to_char(PyObject *py_strseq, char ***out_strv);
 SRD_PRIV GVariant *py_obj_to_variant(PyObject *py_obj);
