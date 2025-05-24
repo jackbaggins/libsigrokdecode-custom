@@ -21,7 +21,7 @@
 AC_PREREQ([2.63])
 
 # libsigrokdecode package version number (NOT the same as shared lib version!).
-AC_INIT([libsigrokdecode], [0.6.0],
+AC_INIT([libsigrokdecode], [0.5.2],
 	[sigrok-devel@lists.sourceforge.net], [libsigrokdecode],
 	[http://www.sigrok.org])
 AC_CONFIG_MACRO_DIR([m4])
@@ -40,15 +40,8 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
-AC_C_CONST
-
 # Required for per-target flags or subdir-objects with C sources.
 AM_PROG_CC_C_O
-
-# Support building Windows DLLs.
-AC_LIBTOOL_WIN32_DLL
-AM_PROG_CC_STDC
-AM_PROG_LIBTOOL
 
 # Set the standard the C library headers should conform to.
 AH_VERBATIM([_POSIX_C_SOURCE], [/* The targeted POSIX standard. */
@@ -70,7 +63,7 @@ SR_PKG_VERSION_SET([SRD_PACKAGE_VERSION], [AC_PACKAGE_VERSION])
 # The algorithm for determining which number to change (and how) is nontrivial!
 # http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
 # Format: current:revision:age.
-SR_LIB_VERSION_SET([SRD_LIB_VERSION], [4:0:0])
+SR_LIB_VERSION_SET([SRD_LIB_VERSION], [6:0:2])
 
 AM_CONDITIONAL([WIN32], [test -z "${host_os##mingw*}" || test -z "${host_os##cygwin*}"])
 
@@ -96,21 +89,15 @@ SRD_PKGLIBS_TESTS=
 SR_PKG_CHECK_SUMMARY([srd_pkglibs_summary])
 
 # Python 3 is always needed.
-# Starting with Python 3.8 we need to check for "python-3.8-embed"
-# first, since usually only that variant will add "-lpython3.8".
-# https://docs.python.org/3/whatsnew/3.8.html#debug-build-uses-the-same-abi-as-release-build
 SR_PKG_CHECK([python3], [SRD_PKGLIBS],
-	[python-3.12-embed], [python-3.11-embed],
-	[python-3.10-embed], [python-3.9-embed], [python-3.8-embed], [python3-embed],
-	[python-3.8 >= 3.8], [python-3.7 >= 3.7], [python-3.6 >= 3.6], [python-3.5 >= 3.5],
-	[python-3.4 >= 3.4], [python-3.3 >= 3.3], [python-3.2 >= 3.2], [python3 >= 3.2])
+	[python3 >= 3.2], [python-3.7 >= 3.7], [python-3.6 >= 3.6], [python-3.5 >= 3.5], [python-3.4 >= 3.4], [python-3.3 >= 3.3], [python-3.2 >= 3.2])
 AS_IF([test "x$sr_have_python3" = xno],
 	[AC_MSG_ERROR([Cannot find Python 3 development headers.])])
 
 # We also need to find the name of the python3 executable (for 'make install').
 # Some OSes call this python3, some call it python3.2, etc. etc.
 AC_ARG_VAR([PYTHON3], [Python 3 interpreter])
-AC_CHECK_PROGS([PYTHON3], [python3.8 python3.7 python3.6 python3.5 python3.4 python3.3 python3.2 python3])
+AC_CHECK_PROGS([PYTHON3], [python3.7 python3.6 python3.5 python3.4 python3.3 python3.2 python3])
 AS_IF([test "x$PYTHON3" = x],
 	[AC_MSG_ERROR([Cannot find Python 3 interpreter.])])
 
@@ -142,17 +129,6 @@ AC_SYS_LARGEFILE
 
 AC_C_BIGENDIAN
 
-#########################
-##  Optional features. ##
-#########################
-
-# Enable IRMP support by default. Accept user overrides.
-AC_ARG_ENABLE([irmp],
-	[AS_HELP_STRING([--enable-irmp], [enable IRMP shared object [default=yes]])],
-	[], [enable_irmp_so=yes])
-AM_CONDITIONAL([WITH_IRMP], [test "x$enable_irmp_so" = "xyes"])
-test -n "$enable_irmp_so" || enable_irmp_so=no
-
 ##############################
 ##  Finalize configuration  ##
 ##############################
@@ -162,7 +138,6 @@ AC_SUBST([SRD_PKGLIBS])
 # Retrieve the compile and link flags for all modules combined.
 # Also, bail out at this point if any module dependency is not met.
 PKG_CHECK_MODULES([LIBSIGROKDECODE], [glib-2.0 >= 2.34 $SRD_PKGLIBS])
-PKG_CHECK_MODULES([LIBIRMP], [glib-2.0 >= 2.34 $SRD_PKGLIBS])
 PKG_CHECK_MODULES([TESTS], [$SRD_PKGLIBS_TESTS glib-2.0 $SRD_PKGLIBS])
 
 srd_glib_version=`$PKG_CONFIG --modversion glib-2.0 2>&AS_MESSAGE_LOG_FD`
@@ -197,6 +172,4 @@ Detected libraries (required):
 $srd_pkglibs_summary
 Detected libraries (optional):
 $srd_pkglibs_opt_summary
-Optional features:
-  - IRMP support library .......... $enable_irmp_so
 _EOF
