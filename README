@@ -1,5 +1,22 @@
 Forked to expiriment with Pulseview build on MacOS - May 24, 2025
 
+As-is, this requires an old version of python that is pre-arm for MacOS.
+
+Pyenv helps here:
+
+pyenv shell 3.7.10
+export PYTHON3=$(pyenv which python3)
+export PATH="$(pyenv root)/versions/3.7.10/bin:$PATH"
+export PKG_CONFIG_PATH="$(pyenv root)/versions/3.7.10/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+Then do:
+./autogen.sh
+./configure
+make
+make install
+
+Builds with no issues. Pulseview is able to use the during build.
+
 -------------------------------------------------------------------------------
 README
 -------------------------------------------------------------------------------
